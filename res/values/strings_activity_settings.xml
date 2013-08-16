@@ -1,0 +1,47 @@
+<resources>
+
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- General settings -->
+    <string name="pref_header_general">General</string>
+    <string name="pref_title_show_nsfw">Display NSFW emotes</string>
+    <string name="pref_description_show_nsfw">Hide explicit emotes</string>
+
+    <!-- Settings for Data & Sync -->
+    <string name="pref_header_data_sync">Data &amp; sync</string>
+    <string name="pref_description_data_sync">Sync frequency, data usage, etc.</string>
+    
+    <string name="pref_title_sync_connection">Download emotes</string>
+    <string name="pref_description_sync_connection_all">When there is a Wi-Fi or mobile data connection available</string>
+    <string name="pref_description_sync_connection_wifi">When there is a Wi-Fi connection available</string>
+    <string-array name="pref_sync_connection_titles">
+        <item>Over Wi-Fi or mobile network</item>
+        <item>Over Wi-Fi only</item>
+    </string-array>
+    <string-array name="pref_sync_connection_values">
+        <item>all</item>
+        <item>wifi</item>
+    </string-array>
+    
+    <string name="pref_title_sync_nsfw">Download NSFW emotes</string>
+    <string name="pref_description_sync_nsfw">Disable to save space and bandwidth</string>
+    <string name="pref_title_sync_frequency">Sync frequency</string>
+
+    <string-array name="pref_sync_frequency_titles">
+        <item>6 hours</item>
+        <item>12 hours</item>        
+        <item>1 day</item>
+        <item>1 week</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>6</item>
+        <item>12</item>
+        <item>24</item>
+        <item>168</item>
+        <item>-1</item>
+    </string-array>
+
+    <string name="pref_title_system_sync_settings">System sync settings</string>
+
+</resources>

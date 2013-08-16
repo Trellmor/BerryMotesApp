@@ -23,12 +23,14 @@ import android.annotation.SuppressLint;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.os.Bundle;
 import android.util.Log;
 
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 	private static final String TAG = SyncAdapter.class.getName();
+	
 
 	/**
 	 * Set up the sync adapter
@@ -57,8 +59,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             SyncResult syncResult) {
 	
 		Log.i(TAG, "Sync start");
+			
 		
-
 		Log.i(TAG, "Sync finished");
 	}
 
