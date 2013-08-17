@@ -59,7 +59,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             SyncResult syncResult) {
 	
 		Log.i(TAG, "Sync start");
-			
+		
+		EmoteDownloader downloader = new EmoteDownloader(getContext());
+		downloader.start(syncResult);
 		
 		Log.i(TAG, "Sync finished");
 	}
