@@ -18,17 +18,14 @@
 
 package com.trellmor.BerryMotes;
 
-import com.trellmor.BerryMotes.sync.SyncUtils;
-
-import android.os.Bundle;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
+import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+
+import com.trellmor.BerryMotes.sync.SyncUtils;
 
 public class MainActivity extends Activity {
 

@@ -52,7 +52,7 @@
         <provider
             android:name="com.trellmor.BerryMotes.provider.EmotesProvider"
             android:authorities="com.trellmor.BerryMotes"
-            android:exported="false" />
+            android:exported="true" />
 
         <service
             android:name="com.trellmor.BerryMotes.sync.SyncService"

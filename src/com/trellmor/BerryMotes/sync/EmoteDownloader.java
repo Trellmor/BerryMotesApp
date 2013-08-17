@@ -10,6 +10,7 @@ import java.io.Reader;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,21 +25,29 @@ import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
 
 import android.content.BroadcastReceiver;
+import android.content.ContentProviderOperation;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.OperationApplicationException;
 import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.http.AndroidHttpClient;
 import android.os.Environment;
+import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.trellmor.BerryMotes.SettingsActivity;
+import com.trellmor.BerryMotes.provider.EmotesContract;
+import com.trellmor.BerryMotes.util.DownloadException;
+import com.trellmor.BerryMotes.util.NetworkNotAvailableException;
+import com.trellmor.BerryMotes.util.StorageNotAvailableException;
 
 public class EmoteDownloader {
 	private static final String TAG = SyncAdapter.class.getName();
@@ -53,6 +62,7 @@ public class EmoteDownloader {
 	private int mNetworkType;
 	private boolean mIsConnected;
 	private String mBaseDir;
+	private final ContentResolver mContentResolver;
 
 	public EmoteDownloader(Context context) {
 		mContext = context;
@@ -65,6 +75,8 @@ public class EmoteDownloader {
 				SettingsActivity.KEY_SYNC_LAST_MODIFIED, 0));
 
 		mBaseDir = mContext.getExternalFilesDir(null) + File.separator;
+
+		mContentResolver = mContext.getContentResolver();
 	}
 
 	public void start(SyncResult syncResult) {
@@ -85,7 +97,21 @@ public class EmoteDownloader {
 		mHttpClient = AndroidHttpClient.newInstance("BerryMotes Android sync");
 
 		try {
-			this.downloadEmoteList();
+			Map<String, EmoteData> emotes = this.downloadEmoteList();
+			if (emotes != null) {
+				this.downloadEmotes(emotes, syncResult);
+
+				this.updateEmotes(emotes, syncResult);
+
+				// If everything is ok, update the last modified date
+				if (!syncResult.hasError()) {
+					PreferenceManager
+							.getDefaultSharedPreferences(mContext)
+							.edit()
+							.putLong(SettingsActivity.KEY_SYNC_LAST_MODIFIED,
+									mLastModified.getTime()).commit();
+				}
+			}
 		} catch (URISyntaxException e) {
 			Log.wtf(TAG, "Emotes URL is malformed", e);
 			syncResult.stats.numParseExceptions++;
@@ -135,7 +161,8 @@ public class EmoteDownloader {
 
 	private void checkCanDownload() throws IOException {
 		if (!this.canDownload()) {
-			throw new IOException("Download currently not possible");
+			throw new NetworkNotAvailableException(
+					"Download currently not possible");
 		}
 	}
 
@@ -146,11 +173,12 @@ public class EmoteDownloader {
 
 	private void checkStorageAvailable() throws IOException {
 		if (!this.isStorageAvailable()) {
-			throw new IOException("Storage not available");
+			throw new StorageNotAvailableException("Storage not available");
 		}
 	}
 
-	private void downloadEmoteList() throws URISyntaxException, IOException {
+	private Map<String, EmoteData> downloadEmoteList()
+			throws URISyntaxException, IOException {
 		HttpRequestBase request = new HttpGet();
 		request.setURI(new URI(HOST + EMOTES));
 		request.setHeader("If-Modified-Since",
@@ -180,21 +208,7 @@ public class EmoteDownloader {
 					}.getType();
 
 					Reader reader = new InputStreamReader(zis, "UTF-8");
-					Map<String, EmoteData> emotes = new Gson().fromJson(reader,
-							mapType);
-
-					// Create .nomedia file to stop android from indexing the
-					// emote images
-					this.checkStorageAvailable();
-					File nomedia = new File(mBaseDir + ".nomedia");
-					if (!nomedia.exists()) {
-						nomedia.getParentFile().mkdirs();
-						nomedia.createNewFile();
-					}
-
-					for (Map.Entry<String, EmoteData> emote : emotes.entrySet()) {
-						downloadEmote(emote.getValue());
-					}
+					return new Gson().fromJson(reader, mapType);
 				} finally {
 					zis.close();
 					is.close();
@@ -202,23 +216,50 @@ public class EmoteDownloader {
 			}
 			break;
 		case 304:
-			// Not modified
 			break;
 		default:
 			throw new IOException("Unexpected HTTP response: "
 					+ response.getStatusLine().getReasonPhrase());
 		}
+		return null;
 	}
 
-	private void downloadEmote(EmoteData emote) throws IOException,
+	private void downloadEmotes(Map<String, EmoteData> emotes,
+			SyncResult syncResult) throws URISyntaxException, IOException {
+		// Create .nomedia file to stop android from indexing the
+		// emote images
+		this.checkStorageAvailable();
+		File nomedia = new File(mBaseDir + ".nomedia");
+		if (!nomedia.exists()) {
+			nomedia.getParentFile().mkdirs();
+			nomedia.createNewFile();
+		}
+
+		for (Map.Entry<String, EmoteData> emote : emotes.entrySet()) {
+			try {
+				if (!downloadEmote(emote.getValue())) {
+					emotes.remove(emote.getKey());
+				}
+			} catch (DownloadException e) {
+				Log.e(TAG, e.getMessage(), e);
+				emotes.remove(emote.getKey());
+				syncResult.stats.numIoExceptions++;
+				syncResult.delayUntil = 6 * 60 * 60; // No point in retrying
+														// straight away
+			}
+		}
+	}
+
+	private boolean downloadEmote(EmoteData emote) throws IOException,
 			URISyntaxException {
 		if (emote.isNsfw() && !mDownloadNSFW) {
-			return;
+			return false;
 		}
 
 		for (EmoteData.Image image : emote.getImages()) {
 			this.downloadImage(image);
 		}
+		return true;
 	}
 
 	private void downloadImage(EmoteData.Image image) throws IOException,
@@ -235,7 +276,7 @@ public class EmoteDownloader {
 			request.setURI(new URI(HOST + image.getImage()));
 			HttpResponse response = mHttpClient.execute(request);
 			if (response.getStatusLine().getStatusCode() != 200) {
-				throw new IOException("Download failed for \""
+				throw new DownloadException("Download failed for \""
 						+ image.getImage()
 						+ "\" code: "
 						+ String.valueOf(response.getStatusLine()
@@ -244,7 +285,7 @@ public class EmoteDownloader {
 
 			HttpEntity entity = response.getEntity();
 			if (entity == null) {
-				throw new IOException("Download failed for \""
+				throw new DownloadException("Download failed for \""
 						+ image.getImage() + "\"");
 			}
 			InputStream is = entity.getContent();
@@ -265,6 +306,52 @@ public class EmoteDownloader {
 			} finally {
 				is.close();
 			}
+		}
+	}
+
+	public void updateEmotes(Map<String, EmoteData> emotes,
+			SyncResult syncResult) {
+		ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+
+		// Delete everything
+		syncResult.stats.numDeletes += mContentResolver.delete(
+				EmotesContract.Emote.CONTENT_URI, null, null);
+
+		// Generate batch insert
+		for (Map.Entry<String, EmoteData> entry : emotes.entrySet()) {
+			String name = entry.getKey();
+			EmoteData emote = entry.getValue();
+			for (EmoteData.Image image : emote.getImages()) {
+				batch.add(ContentProviderOperation
+						.newInsert(EmotesContract.Emote.CONTENT_URI)
+						.withValue(EmotesContract.Emote.COLUMN_NAME, name)
+						.withValue(EmotesContract.Emote.COLUMN_NSFW,
+								(emote.isNsfw() ? 1 : 0))
+						.withValue(EmotesContract.Emote.COLUMN_APNG,
+								(emote.isApng() ? 1 : 0))
+						.withValue(EmotesContract.Emote.COLUMN_IMAGE,
+								mBaseDir + image.getImage())
+						.withValue(EmotesContract.Emote.COLUMN_INDEX,
+								image.getIndex())
+						.withValue(EmotesContract.Emote.COLUMN_DELAY,
+								image.getDelay()).build());
+				syncResult.stats.numInserts++;
+			}
+		}
+		try {
+			mContentResolver
+					.applyBatch(EmotesContract.CONTENT_AUTHORITY, batch);
+			mContentResolver.notifyChange( //
+					EmotesContract.Emote.CONTENT_URI, // URI where data was
+														// modified
+					null, // No local observer
+					false); // IMPORTANT: Do not sync to network
+		} catch (RemoteException e) {
+			Log.e(TAG, "Error updating database: " + e.toString());
+			syncResult.databaseError = true;
+		} catch (OperationApplicationException e) {
+			Log.e(TAG, "Error updating database: " + e.toString());
+			syncResult.databaseError = true;
 		}
 	}
 

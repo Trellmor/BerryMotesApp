@@ -5,7 +5,8 @@
     <!-- General settings -->
     <string name="pref_header_general">General</string>
     <string name="pref_title_show_nsfw">Display NSFW emotes</string>
-    <string name="pref_description_show_nsfw">Hide explicit emotes</string>
+    <string name="pref_description_show_nsfw_true">Show explicit emotes</string>
+    <string name="pref_description_show_nsfw_false">Hide explicit emotes</string>
 
     <!-- Settings for Data & Sync -->
     <string name="pref_header_data_sync">Data &amp; sync</string>

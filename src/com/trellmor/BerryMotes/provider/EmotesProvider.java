@@ -20,42 +20,182 @@ package com.trellmor.BerryMotes.provider;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
+import android.preference.PreferenceManager;
+
+import com.trellmor.BerryMotes.SettingsActivity;
+import com.trellmor.BerryMotes.util.SelectionBuilder;
 
 public class EmotesProvider extends ContentProvider {
+	EmotesDatabase mDatabaseHelper;
 
 	private static final String AUTHORITY = EmotesContract.CONTENT_AUTHORITY;
 
+	public static final int ROUTE_EMOTES = 1;
+	public static final int ROUTE_EMOTES_ID = 2;
+
+	private static final UriMatcher sUriMatcher = new UriMatcher(
+			UriMatcher.NO_MATCH);
+	static {
+		sUriMatcher.addURI(AUTHORITY, "emotes", ROUTE_EMOTES);
+		sUriMatcher.addURI(AUTHORITY, "emotes/*", ROUTE_EMOTES_ID);
+	}
+
 	@Override
 	public boolean onCreate() {
+		mDatabaseHelper = new EmotesDatabase(getContext());
 		return true;
 	}
 
 	@Override
 	public String getType(Uri uri) {
-		return new String();
+		final int match = sUriMatcher.match(uri);
+		switch (match) {
+		case ROUTE_EMOTES:
+			return EmotesContract.Emote.CONTENT_TYPE;
+		case ROUTE_EMOTES_ID:
+			return EmotesContract.Emote.CONTENT_ITEM_TYPE;
+		default:
+			throw new UnsupportedOperationException("Unknown uri: " + uri);
+		}
 	}
 
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
-		return null;
+		SQLiteDatabase db = mDatabaseHelper.getReadableDatabase();
+		SelectionBuilder builder = new SelectionBuilder();
+		int uriMatch = sUriMatcher.match(uri);
+		switch (uriMatch) {
+		case ROUTE_EMOTES_ID:
+			// Return a single entry, by ID
+			String id = uri.getLastPathSegment();
+			builder.where(EmotesContract.Emote._ID + "=?", id);
+		case ROUTE_EMOTES:
+			// Return all known entries
+			builder.table(EmotesContract.Emote.TABLE_NAME).where(selection,
+					selectionArgs);
+
+			if (PreferenceManager.getDefaultSharedPreferences(getContext())
+					.getBoolean(SettingsActivity.KEY_SHOW_NSFW, false)) {
+				builder.where(EmotesContract.Emote.COLUMN_NSFW + "=?", "0");
+			}
+			Cursor c = builder.query(db, projection, sortOrder);
+
+			// Note: Notification URI must be manually set here for loaders to
+			// correctly register ContentObservers.
+			Context ctx = getContext();
+			assert ctx != null;
+			c.setNotificationUri(ctx.getContentResolver(), uri);
+
+			return c;
+		default:
+			throw new UnsupportedOperationException("Unknown uri: " + uri);
+		}
 	}
 
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
-		return null;
+		final SQLiteDatabase db = mDatabaseHelper.getWritableDatabase();
+		assert db != null;
+		final int match = sUriMatcher.match(uri);
+		Uri result;
+		switch (match) {
+		case ROUTE_EMOTES:
+			long id = db.insertOrThrow(EmotesContract.Emote.TABLE_NAME, null,
+					values);
+			result = Uri.parse(EmotesContract.Emote.CONTENT_URI + "/" + id);
+			break;
+		case ROUTE_EMOTES_ID:
+			throw new UnsupportedOperationException(
+					"Insert not supported on URI: " + uri);
+		default:
+			throw new UnsupportedOperationException("Unknown uri: " + uri);
+		}
+
+		// Send broadcast to registered ContentObservers, to refresh UI.
+		Context ctx = getContext();
+		assert ctx != null;
+		ctx.getContentResolver().notifyChange(uri, null, false);
+
+		return result;
 	}
 
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
-		return 0;
+		SelectionBuilder builder = new SelectionBuilder();
+		final SQLiteDatabase db = mDatabaseHelper.getWritableDatabase();
+		final int match = sUriMatcher.match(uri);
+		int count;
+		switch (match) {
+		case ROUTE_EMOTES:
+			count = builder.table(EmotesContract.Emote.TABLE_NAME)
+					.where(selection, selectionArgs).delete(db);
+			break;
+		case ROUTE_EMOTES_ID:
+			String id = uri.getLastPathSegment();
+			count = builder.table(EmotesContract.Emote.TABLE_NAME)
+					.where(EmotesContract.Emote._ID + "=?", id)
+					.where(selection, selectionArgs).delete(db);
+			break;
+		default:
+			throw new UnsupportedOperationException("Unknown uri: " + uri);
+		}
+
+		// Send broadcast to registered ContentObservers, to refresh UI.
+		Context ctx = getContext();
+		assert ctx != null;
+		ctx.getContentResolver().notifyChange(uri, null, false);
+
+		return count;
 	}
 
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
-		return 0;
+		throw new UnsupportedOperationException("Update not supported");
 	}
 
+	static class EmotesDatabase extends SQLiteOpenHelper {
+		private final Context mContext;
+
+		public static final int DATABASE_VERSION = 1;
+
+		private static final String DATABASE_NAME = "emotes.db";
+
+		private static final String SQL_CREATE_ENTRIES = "CREATE TABLE "
+				+ EmotesContract.Emote.TABLE_NAME + " ("
+				+ EmotesContract.Emote._ID + " INTEGER PRIMARY KEY,"
+				+ EmotesContract.Emote.COLUMN_NAME + " TEXT,"
+				+ EmotesContract.Emote.COLUMN_NSFW + " INTEGER,"
+				+ EmotesContract.Emote.COLUMN_APNG + " INTEGER,"
+				+ EmotesContract.Emote.COLUMN_IMAGE + " TEXT,"
+				+ EmotesContract.Emote.COLUMN_INDEX + " INTEGER,"
+				+ EmotesContract.Emote.COLUMN_DELAY + " INTEGER)";
+
+		private static final String SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS "
+				+ EmotesContract.Emote.TABLE_NAME;
+
+		public EmotesDatabase(Context context) {
+			super(context, DATABASE_NAME, null, DATABASE_VERSION);
+			mContext = context;
+		}
+
+		@Override
+		public void onCreate(SQLiteDatabase db) {
+			db.execSQL(SQL_CREATE_ENTRIES);
+			PreferenceManager.getDefaultSharedPreferences(mContext).edit()
+					.remove(SettingsActivity.KEY_SYNC_LAST_MODIFIED).commit();
+		}
+
+		@Override
+		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			db.execSQL(SQL_DELETE_ENTRIES);
+			onCreate(db);
+		}
+	}
 }

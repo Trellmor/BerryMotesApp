@@ -2,6 +2,8 @@ package com.trellmor.BerryMotes;
 
 import com.trellmor.BerryMotes.sync.SyncUtils;
 
+import android.content.Context;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -58,6 +60,9 @@ public class SettingsActivity extends PreferenceActivity {
 
 		bindPreferenceSummaryToValue(findPreference(KEY_SYNC_FREQUENCY));
 		bindPreferenceSummaryToValue(findPreference(KEY_SYNC_CONNECTION));
+		bindPreferenceSummaryToValue(findPreference(KEY_SHOW_NSFW));
+		findPreference(KEY_SYNC_NSFW).setOnPreferenceChangeListener(
+				sResyncListener);
 	}
 
 	/**
@@ -71,11 +76,14 @@ public class SettingsActivity extends PreferenceActivity {
 
 			if (preference instanceof ListPreference) {
 				if (preference.getKey().equals(KEY_SYNC_CONNECTION)) {
-					if (stringValue.equals(SettingsActivity.VALUE_SYNC_CONNECTION_ALL)) {
-						preference.setSummary(R.string.pref_description_sync_connection_all);
+					if (stringValue
+							.equals(SettingsActivity.VALUE_SYNC_CONNECTION_ALL)) {
+						preference
+								.setSummary(R.string.pref_description_sync_connection_all);
 					} else {
-						preference.setSummary(R.string.pref_description_sync_connection_wifi);
-						
+						preference
+								.setSummary(R.string.pref_description_sync_connection_wifi);
+
 						// Stop current sync
 						SyncUtils.CancelSync();
 					}
@@ -91,6 +99,14 @@ public class SettingsActivity extends PreferenceActivity {
 							.getEntries()[index] : null);
 				}
 
+			} else if (KEY_SHOW_NSFW.equals(preference.getKey())) {
+				if (Boolean.parseBoolean(stringValue)) {
+					preference
+							.setSummary(R.string.pref_description_show_nsfw_true);
+				} else {
+					preference
+							.setSummary(R.string.pref_description_show_nsfw_false);
+				}
 			} else {
 				// For all other preferences, set the summary to the value's
 				// simple string representation.
@@ -98,7 +114,7 @@ public class SettingsActivity extends PreferenceActivity {
 			}
 
 			if (preference.getKey().equals(SettingsActivity.KEY_SYNC_FREQUENCY)) {
-				// Adjust sync frequence
+				// Adjust sync frequency
 				SyncUtils.SetSyncFrequency(Integer.parseInt(stringValue));
 			}
 			return true;
@@ -127,4 +143,24 @@ public class SettingsActivity extends PreferenceActivity {
 						preference.getContext()).getString(preference.getKey(),
 						""));
 	}
+
+	/**
+	 * A preference value change listener that clears the last sync date
+	 */
+	private static Preference.OnPreferenceChangeListener sResyncListener = new Preference.OnPreferenceChangeListener() {
+		@Override
+		public boolean onPreferenceChange(Preference preference, Object value) {
+			if (preference.getKey().equals(SettingsActivity.KEY_SYNC_NSFW)) {
+				clearLastModified(preference.getContext());
+			}
+			return true;
+		}
+
+		private void clearLastModified(Context context) {
+			Editor editor = PreferenceManager.getDefaultSharedPreferences(
+					context).edit();
+			editor.remove(KEY_SYNC_LAST_MODIFIED);
+			editor.commit();
+		}
+	};
 }

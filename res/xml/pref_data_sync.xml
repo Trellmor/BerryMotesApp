@@ -17,7 +17,7 @@
     <CheckBoxPreference
         android:defaultValue="false"
         android:key="sync_nsfw"
-        android:summary="@string/pref_description_show_nsfw"
+        android:summary="@string/pref_description_sync_nsfw"
         android:title="@string/pref_title_sync_nsfw" />
     
     
