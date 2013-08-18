@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.trellmor.BerryMotes.sync;
+package com.trellmor.berrymotes.sync;
 
 import android.app.Service;
 import android.content.Intent;

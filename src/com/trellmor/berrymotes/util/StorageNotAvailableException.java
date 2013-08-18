@@ -1,4 +1,4 @@
-package com.trellmor.BerryMotes.util;
+package com.trellmor.berrymotes.util;
 
 import java.io.IOException;
 

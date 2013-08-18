@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.trellmor.BerryMotes;
+package com.trellmor.berrymotes;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -25,7 +25,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.trellmor.BerryMotes.sync.SyncUtils;
+import com.trellmor.berrymotes.R;
+import com.trellmor.berrymotes.sync.SyncUtils;
 
 public class MainActivity extends Activity {
 

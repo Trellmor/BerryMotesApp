@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.trellmor.BerryMotes.sync;
+package com.trellmor.berrymotes.sync;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -24,8 +24,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 
-import com.trellmor.BerryMotes.SettingsActivity;
-import com.trellmor.BerryMotes.provider.EmotesContract;
+import com.trellmor.berrymotes.provider.EmotesContract;
+import com.trellmor.berrymotes.SettingsActivity;
 
 /**
  * Static helper methods for working with the sync framework.

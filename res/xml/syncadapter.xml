@@ -20,8 +20,8 @@
 
 <sync-adapter
         xmlns:android="http://schemas.android.com/apk/res/android"
-        android:contentAuthority="com.trellmor.BerryMotes"
-        android:accountType="com.trellmor.BerryMotes.sync"
+        android:contentAuthority="com.trellmor.berrymotes"
+        android:accountType="com.trellmor.berrymotes.sync"
         android:userVisible="false"
         android:supportsUploading="false"
         android:allowParallelSyncs="false"

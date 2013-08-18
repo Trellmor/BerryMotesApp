@@ -20,7 +20,7 @@
 
 <account-authenticator
     xmlns:android="http://schemas.android.com/apk/res/android"
-	android:accountType="com.trellmor.BerryMotes.sync"
+	android:accountType="com.trellmor.berrymotes.sync"
 	android:icon="@drawable/ic_launcher"
 	android:smallIcon="@drawable/ic_launcher"
 	android:label="@string/app_name" />

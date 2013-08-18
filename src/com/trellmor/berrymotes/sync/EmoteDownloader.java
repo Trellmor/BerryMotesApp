@@ -1,4 +1,4 @@
-package com.trellmor.BerryMotes.sync;
+package com.trellmor.berrymotes.sync;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,11 +43,11 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.trellmor.BerryMotes.SettingsActivity;
-import com.trellmor.BerryMotes.provider.EmotesContract;
-import com.trellmor.BerryMotes.util.DownloadException;
-import com.trellmor.BerryMotes.util.NetworkNotAvailableException;
-import com.trellmor.BerryMotes.util.StorageNotAvailableException;
+import com.trellmor.berrymotes.provider.EmotesContract;
+import com.trellmor.berrymotes.SettingsActivity;
+import com.trellmor.berrymotes.util.DownloadException;
+import com.trellmor.berrymotes.util.NetworkNotAvailableException;
+import com.trellmor.berrymotes.util.StorageNotAvailableException;
 
 public class EmoteDownloader {
 	private static final String TAG = SyncAdapter.class.getName();

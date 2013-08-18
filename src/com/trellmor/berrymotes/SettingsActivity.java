@@ -1,6 +1,6 @@
-package com.trellmor.BerryMotes;
+package com.trellmor.berrymotes;
 
-import com.trellmor.BerryMotes.sync.SyncUtils;
+import com.trellmor.berrymotes.sync.SyncUtils;
 
 import android.content.Context;
 import android.content.SharedPreferences.Editor;

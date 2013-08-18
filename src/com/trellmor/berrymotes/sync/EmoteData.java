@@ -1,4 +1,4 @@
-package com.trellmor.BerryMotes.sync;
+package com.trellmor.berrymotes.sync;
 
 import java.util.List;
 

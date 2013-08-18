@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.trellmor.BerryMotes.sync;
+package com.trellmor.berrymotes.sync;
 
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
@@ -29,7 +29,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 
 public class GenericAccountService extends Service {
-	private static final String ACCOUNT_TYPE = "com.trellmor.BerryMotes.sync";
+	private static final String ACCOUNT_TYPE = "com.trellmor.berrymotes.sync";
 	public static final String ACCOUNT_NAME = "BerryMotes";
 	private Authenticator mAuthenticator;
 

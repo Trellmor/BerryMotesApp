@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.trellmor.BerryMotes.provider;
+package com.trellmor.berrymotes.provider;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -28,8 +28,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
-import com.trellmor.BerryMotes.SettingsActivity;
-import com.trellmor.BerryMotes.util.SelectionBuilder;
+import com.trellmor.berrymotes.provider.EmotesContract;
+import com.trellmor.berrymotes.SettingsActivity;
+import com.trellmor.berrymotes.util.SelectionBuilder;
 
 public class EmotesProvider extends ContentProvider {
 	EmotesDatabase mDatabaseHelper;

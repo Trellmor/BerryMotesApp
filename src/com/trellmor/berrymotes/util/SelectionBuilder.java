@@ -21,7 +21,7 @@
  * -Removed com.google.common.collect import
  */
 
-package com.trellmor.BerryMotes.util;
+package com.trellmor.berrymotes.util;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -35,7 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.trellmor.BerryMotes.sync.SyncAdapter;
+import com.trellmor.berrymotes.sync.SyncAdapter;
 
 /**
  * Helper for building selection clauses for {@link SQLiteDatabase}. Each
