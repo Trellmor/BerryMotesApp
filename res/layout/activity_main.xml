@@ -38,9 +38,18 @@
         android:id="@+id/button_cancel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@id/button_sync"
+        android:layout_alignParentRight="true"
         android:text="@string/button_cancel"
         android:onClick="buttonCancelClick" />
+
+    <TextView
+        android:id="@+id/text_info"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:singleLine="false"
+        android:layout_below="@+id/button_sync"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:text="@string/text_info" />
 
 </RelativeLayout>
