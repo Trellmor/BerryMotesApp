@@ -145,7 +145,14 @@ public class SelectionBuilder {
      * Execute query using the current internal state as {@code WHERE} clause.
      */
     public Cursor query(SQLiteDatabase db, String[] columns, String orderBy) {
-        return query(db, columns, null, null, orderBy, null);
+        return query(false, db, columns, null, null, orderBy, null);
+    }
+    
+    /**
+     * Execute query using the current internal state as {@code WHERE} clause.
+     */
+    public Cursor query(boolean distinct, SQLiteDatabase db, String[] columns, String orderBy) {
+        return query(distinct, db, columns, null, null, orderBy, null);
     }
 
     /**
@@ -153,11 +160,19 @@ public class SelectionBuilder {
      */
     public Cursor query(SQLiteDatabase db, String[] columns, String groupBy,
                         String having, String orderBy, String limit) {
-        assertTable();
+        return query(false, db, columns, groupBy, having,
+                orderBy, limit);
+    }
+    
+    /**
+     * Execute query using the current internal state as {@code WHERE} clause.
+     */
+    public Cursor query(boolean distinct, SQLiteDatabase db, String[] columns, String groupBy,
+                        String having, String orderBy, String limit) {
+    	assertTable();
         if (columns != null) mapColumns(columns);
         Log.v(TAG, "query(columns=" + Arrays.toString(columns) + ") " + this);
-        return db.query(mTable, columns, getSelection(), getSelectionArgs(), groupBy, having,
-                orderBy, limit);
+        return db.query(distinct, mTable, columns, getSelection(), getSelectionArgs(), groupBy, having, orderBy, limit);
     }
 
     /**

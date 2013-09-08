@@ -27,11 +27,20 @@
     tools:context=".MainActivity" >
 
     <Button
-        android:id="@+id/button_refresh"
+        android:id="@+id/button_sync"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:text="@string/button_refresh"
-        android:onClick="refresh" />
+        android:layout_alignParentLeft="true"
+        android:text="@string/button_sync"
+        android:onClick="buttonSyncClick" />
+    
+    <Button
+        android:id="@+id/button_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/button_sync"
+        android:text="@string/button_cancel"
+        android:onClick="buttonCancelClick" />
 
 </RelativeLayout>

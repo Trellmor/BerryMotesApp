@@ -20,8 +20,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.trellmor.berrymotes"
-    android:versionCode="1"
-    android:versionName="1.0" >
+    android:versionCode="10000"
+    android:versionName="1.0.0" >
 
     <uses-sdk
         android:minSdkVersion="8"
@@ -51,7 +51,7 @@
 
         <provider
             android:name="com.trellmor.berrymotes.provider.EmotesProvider"
-            android:authorities="com.trellmor.BerryMotes"
+            android:authorities="com.trellmor.berrymotes"
             android:exported="true" />
 
         <service
@@ -65,6 +65,7 @@
                 android:name="android.content.SyncAdapter"
                 android:resource="@xml/syncadapter" />
         </service>
+        
         <service android:name="com.trellmor.berrymotes.sync.GenericAccountService" >
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
@@ -76,8 +77,12 @@
         </service>
 
         <activity
-            android:name="com.trellmor.berrrymotes.SettingsActivity"
+            android:name="com.trellmor.berrymotes.SettingsActivity"
             android:label="@string/title_activity_settings" >
+            <intent-filter>
+                <action android:name="com.trellmor.berrymotes.Settings" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
     </application>
 

@@ -60,9 +60,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 		Log.i(TAG, "Sync start");
 		
 		EmoteDownloader downloader = new EmoteDownloader(getContext());
-		downloader.start(syncResult);
+		try {
+			downloader.start(syncResult);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			syncResult.delayUntil = 60;
+			syncResult.stats.numIoExceptions++;
+		}
 		
 		Log.i(TAG, "Sync finished");
 	}
-
 }

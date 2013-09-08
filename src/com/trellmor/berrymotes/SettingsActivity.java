@@ -1,9 +1,29 @@
+/*
+ * BerryMotes android 
+ * Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.trellmor.berrymotes;
 
 import com.trellmor.berrymotes.sync.SyncUtils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences.Editor;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -28,13 +48,22 @@ public class SettingsActivity extends PreferenceActivity {
 	public final static String KEY_SYNC_NSFW = "sync_nsfw";
 	public final static String KEY_SYNC_FREQUENCY = "sync_frequency";
 	public final static String KEY_SYNC_LAST_MODIFIED = "sync_last_modified";
+	public final static String KEY_SYNC_SUBREDDITS = "sync_subreddits";
 
 	public final static String VALUE_SYNC_CONNECTION_WIFI = "wifi";
 	public final static String VALUE_SYNC_CONNECTION_ALL = "all";
+	
+	public final static String DEFALT_SYNC_SUBREDDITS = "#ALL";
+	public final static String SEPERATOR_SYNC_SUBREDDITS = ";";
 
+	@SuppressLint("NewApi")
 	@Override
 	protected void onPostCreate(Bundle savedInstanceState) {
 		super.onPostCreate(savedInstanceState);
+		
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			getActionBar().setDisplayHomeAsUpEnabled(true);
+		}
 
 		setupSimplePreferencesScreen();
 	}
@@ -60,9 +89,9 @@ public class SettingsActivity extends PreferenceActivity {
 
 		bindPreferenceSummaryToValue(findPreference(KEY_SYNC_FREQUENCY));
 		bindPreferenceSummaryToValue(findPreference(KEY_SYNC_CONNECTION));
-		bindPreferenceSummaryToValue(findPreference(KEY_SHOW_NSFW));
 		findPreference(KEY_SYNC_NSFW).setOnPreferenceChangeListener(
 				sResyncListener);
+		findPreference(KEY_SYNC_SUBREDDITS).setOnPreferenceChangeListener(sResyncListener);
 	}
 
 	/**
@@ -85,27 +114,17 @@ public class SettingsActivity extends PreferenceActivity {
 								.setSummary(R.string.pref_description_sync_connection_wifi);
 
 						// Stop current sync
-						SyncUtils.CancelSync();
+						SyncUtils.cancelSync();
 					}
 				} else {
 					// For list preferences, look up the correct display value
-					// in
-					// the preference's 'entries' list.
+					// in the preference's 'entries' list.
 					ListPreference listPreference = (ListPreference) preference;
 					int index = listPreference.findIndexOfValue(stringValue);
 
 					// Set the summary to reflect the new value.
 					preference.setSummary(index >= 0 ? listPreference
 							.getEntries()[index] : null);
-				}
-
-			} else if (KEY_SHOW_NSFW.equals(preference.getKey())) {
-				if (Boolean.parseBoolean(stringValue)) {
-					preference
-							.setSummary(R.string.pref_description_show_nsfw_true);
-				} else {
-					preference
-							.setSummary(R.string.pref_description_show_nsfw_false);
 				}
 			} else {
 				// For all other preferences, set the summary to the value's
@@ -115,7 +134,7 @@ public class SettingsActivity extends PreferenceActivity {
 
 			if (preference.getKey().equals(SettingsActivity.KEY_SYNC_FREQUENCY)) {
 				// Adjust sync frequency
-				SyncUtils.SetSyncFrequency(Integer.parseInt(stringValue));
+				SyncUtils.setSyncFrequency(Integer.parseInt(stringValue));
 			}
 			return true;
 		}
@@ -150,9 +169,8 @@ public class SettingsActivity extends PreferenceActivity {
 	private static Preference.OnPreferenceChangeListener sResyncListener = new Preference.OnPreferenceChangeListener() {
 		@Override
 		public boolean onPreferenceChange(Preference preference, Object value) {
-			if (preference.getKey().equals(SettingsActivity.KEY_SYNC_NSFW)) {
-				clearLastModified(preference.getContext());
-			}
+			clearLastModified(preference.getContext());
+			SyncUtils.cancelSync();
 			return true;
 		}
 

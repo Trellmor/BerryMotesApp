@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		SyncUtils.CreateSyncAccount(this);
+		SyncUtils.createSyncAccount(this);
 	}
 
 	@Override
@@ -58,8 +58,20 @@ public class MainActivity extends Activity {
 	}
 	
 
-	public void refresh(View view) {
-		SyncUtils.TriggerRefresh();
+	public void buttonSyncClick(View view) {
+		sync();
+	}
+	
+	public void buttonCancelClick(View view) {
+		cancel();
+	}
+	
+	private void sync() {
+		SyncUtils.triggerRefresh();
+	}
+	
+	private void cancel() {
+		SyncUtils.cancelSync();
 	}
 
 }

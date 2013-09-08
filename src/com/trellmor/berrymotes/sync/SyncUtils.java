@@ -41,7 +41,7 @@ public class SyncUtils {
 	 * @param context
 	 *            Context
 	 */
-	public static void CreateSyncAccount(Context context) {
+	public static void createSyncAccount(Context context) {
 		boolean newAccount = false;
 		boolean setupComplete = PreferenceManager.getDefaultSharedPreferences(
 				context).getBoolean(PREF_SETUP_COMPLETE, false);
@@ -62,19 +62,18 @@ public class SyncUtils {
 			ContentResolver.setSyncAutomatically(account, CONTENT_AUTHORITY,
 					true);
 			// Recommend a schedule for automatic synchronization. The system
-			// may modify this based
-			// on other scheduled syncs and network utilization.
-			SetSyncFrequency(syncFrequency);
+			// may modify this based on other scheduled syncs and network
+			// utilization.
+			setSyncFrequency(syncFrequency);
 			newAccount = true;
 		}
 
 		// Schedule an initial sync if we detect problems with either our
-		// account or our local
-		// data has been deleted. (Note that it's possible to clear app data
-		// WITHOUT affecting
-		// the account list, so wee need to check both.)
+		// account or our local data has been deleted. (Note that it's possible
+		// to clear app data WITHOUT affecting the account list, so wee need to
+		// check both.)
 		if (newAccount || !setupComplete) {
-			TriggerRefresh();
+			triggerRefresh();
 			PreferenceManager.getDefaultSharedPreferences(context).edit()
 					.putBoolean(PREF_SETUP_COMPLETE, true).commit();
 		}
@@ -94,7 +93,7 @@ public class SyncUtils {
 	 * for that data, you should omit this flag; this will give the OS
 	 * additional freedom in scheduling your sync request.
 	 */
-	public static void TriggerRefresh() {
+	public static void triggerRefresh() {
 		Bundle b = new Bundle();
 		// Disable sync backoff and ignore sync preferences. In other
 		// words...perform sync NOW!
@@ -106,7 +105,7 @@ public class SyncUtils {
 				b); // Extras
 	}
 
-	public static void SetSyncFrequency(int hours) {
+	public static void setSyncFrequency(int hours) {
 		// Only set up new sync if interval is positive, otherwise sync is
 		// disabled
 		if (hours > 0) {
@@ -114,12 +113,14 @@ public class SyncUtils {
 					EmotesContract.CONTENT_AUTHORITY, new Bundle(),
 					60 * 60 * hours);
 		} else {
-			ContentResolver.removePeriodicSync(GenericAccountService.getAccount(),
+			ContentResolver.removePeriodicSync(
+					GenericAccountService.getAccount(),
 					EmotesContract.CONTENT_AUTHORITY, new Bundle());
 		}
 	}
-	
-	public static void CancelSync() {
-		ContentResolver.cancelSync(GenericAccountService.getAccount(), EmotesContract.CONTENT_AUTHORITY);
+
+	public static void cancelSync() {
+		ContentResolver.cancelSync(GenericAccountService.getAccount(),
+				EmotesContract.CONTENT_AUTHORITY);
 	}
 }

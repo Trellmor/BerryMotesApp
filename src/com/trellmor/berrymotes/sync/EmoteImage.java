@@ -16,14 +16,49 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.trellmor.berrymotes.util;
+package com.trellmor.berrymotes.sync;
 
-import java.io.IOException;
+import java.util.List;
 
-public class StorageNotAvailableException extends IOException {
-	private static final long serialVersionUID = 1L;
+public class EmoteImage {
+	private boolean apng = false;
+	private boolean nsfw = false;
+	private int delay = 0;
+	private int index = 0;
+	private String hash;
+	private String image;
+	private String sr;
+	private List<String> names;
+
+	public boolean isApng() {
+		return apng;
+	}
+
+	public boolean isNsfw() {
+		return nsfw;
+	}
+
+	public List<String> getNames() {
+		return names;
+	}
+
+	public int getDelay() {
+		return delay;
+	}
+
+	public int getIndex() {
+		return index;
+	}
+
+	public String getImage() {
+		return image;
+	}
 	
-	public StorageNotAvailableException(String string) {
-		super(string);
+	public String getHash() {
+		return hash;
+	}
+	
+	public String getSubreddit() {
+		return sr;
 	}
 }

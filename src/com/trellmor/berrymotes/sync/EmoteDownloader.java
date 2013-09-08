@@ -1,3 +1,21 @@
+/*
+ * BerryMotes android 
+ * Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.trellmor.berrymotes.sync;
 
 import java.io.File;
@@ -13,7 +31,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.http.Header;
@@ -33,8 +51,10 @@ import android.content.IntentFilter;
 import android.content.OperationApplicationException;
 import android.content.SharedPreferences;
 import android.content.SyncResult;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.net.http.AndroidHttpClient;
 import android.os.Environment;
 import android.os.RemoteException;
@@ -45,6 +65,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.trellmor.berrymotes.provider.EmotesContract;
 import com.trellmor.berrymotes.SettingsActivity;
+import com.trellmor.berrymotes.util.CheckListPreference;
 import com.trellmor.berrymotes.util.DownloadException;
 import com.trellmor.berrymotes.util.NetworkNotAvailableException;
 import com.trellmor.berrymotes.util.StorageNotAvailableException;
@@ -57,11 +78,16 @@ public class EmoteDownloader {
 
 	private Context mContext;
 	private boolean mDownloadNSFW;
-	private AndroidHttpClient mHttpClient;
+	private boolean mWiFiOnly;
 	private Date mLastModified;
+	private CheckListPreference mSubreddits;
+
 	private int mNetworkType;
 	private boolean mIsConnected;
-	private String mBaseDir;
+
+	private AndroidHttpClient mHttpClient;
+
+	private File mBaseDir;
 	private final ContentResolver mContentResolver;
 
 	public EmoteDownloader(Context context) {
@@ -71,15 +97,23 @@ public class EmoteDownloader {
 				.getDefaultSharedPreferences(context);
 		mDownloadNSFW = settings.getBoolean(SettingsActivity.KEY_SYNC_NSFW,
 				false);
+		mWiFiOnly = settings.getString(SettingsActivity.KEY_SYNC_CONNECTION,
+				SettingsActivity.VALUE_SYNC_CONNECTION_WIFI).equals(
+				SettingsActivity.VALUE_SYNC_CONNECTION_WIFI);
 		mLastModified = new Date(settings.getLong(
 				SettingsActivity.KEY_SYNC_LAST_MODIFIED, 0));
+		mSubreddits = new CheckListPreference(settings.getString(
+				SettingsActivity.KEY_SYNC_SUBREDDITS,
+				SettingsActivity.DEFALT_SYNC_SUBREDDITS),
+				SettingsActivity.SEPERATOR_SYNC_SUBREDDITS,
+				SettingsActivity.DEFALT_SYNC_SUBREDDITS);
 
-		mBaseDir = mContext.getExternalFilesDir(null) + File.separator;
+		mBaseDir = mContext.getExternalFilesDir(null);
 
 		mContentResolver = mContext.getContentResolver();
 	}
 
-	public void start(SyncResult syncResult) {
+	public void start(SyncResult syncResult) throws InterruptedException {
 		this.updateNetworkInfo();
 
 		if (!mIsConnected) {
@@ -97,7 +131,7 @@ public class EmoteDownloader {
 		mHttpClient = AndroidHttpClient.newInstance("BerryMotes Android sync");
 
 		try {
-			Map<String, EmoteData> emotes = this.downloadEmoteList();
+			List<EmoteImage> emotes = this.getEmoteList();
 			if (emotes != null) {
 				this.downloadEmotes(emotes, syncResult);
 
@@ -122,6 +156,12 @@ public class EmoteDownloader {
 			syncResult.stats.numIoExceptions++;
 			syncResult.delayUntil = 30 * 60;
 			return;
+		} catch (RemoteException e) {
+			Log.e(TAG, "Error updating database: " + e.toString());
+			syncResult.databaseError = true;
+		} catch (OperationApplicationException e) {
+			Log.e(TAG, "Error updating database: " + e.toString());
+			syncResult.databaseError = true;
 		} finally {
 			mHttpClient.close();
 		}
@@ -149,14 +189,7 @@ public class EmoteDownloader {
 			return false;
 		}
 
-		SharedPreferences settings = PreferenceManager
-				.getDefaultSharedPreferences(mContext);
-		boolean wiFiOnly = settings.getString(
-				SettingsActivity.KEY_SYNC_CONNECTION,
-				SettingsActivity.VALUE_SYNC_CONNECTION_WIFI).equals(
-				SettingsActivity.VALUE_SYNC_CONNECTION_WIFI);
-
-		return !(wiFiOnly && mNetworkType != ConnectivityManager.TYPE_WIFI);
+		return !(mWiFiOnly && mNetworkType != ConnectivityManager.TYPE_WIFI);
 	}
 
 	private void checkCanDownload() throws IOException {
@@ -177,8 +210,68 @@ public class EmoteDownloader {
 		}
 	}
 
-	private Map<String, EmoteData> downloadEmoteList()
-			throws URISyntaxException, IOException {
+	private List<EmoteImage> getEmoteList() throws URISyntaxException,
+			IOException, RemoteException, OperationApplicationException {
+		List<EmoteImage> emotes = downloadEmoteList();
+		if (emotes != null) {
+			HashMap<String, EmoteImage> emotesHash = new HashMap<String, EmoteImage>();
+			int i = 0;
+			while (i < emotes.size()) {
+				EmoteImage emote = emotes.get(i);
+				if (!mSubreddits.isChecked(emote.getSubreddit())) {
+					emotes.remove(i);
+					continue;
+				} else if (!mDownloadNSFW && emote.isNsfw()) {
+					emotes.remove(i);
+					continue;
+				} else {
+					emotesHash.put(emote.getHash(), emote);
+				}
+				i++;
+			}
+
+			Cursor c = mContentResolver.query(
+					EmotesContract.Emote.CONTENT_URI_DISTINCT, new String[] {
+							EmotesContract.Emote.COLUMN_HASH,
+							EmotesContract.Emote.COLUMN_IMAGE }, null, null,
+					null);
+			if (c != null) {
+				ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+
+				if (c.moveToFirst()) {
+					final int POS_HASH = c
+							.getColumnIndex(EmotesContract.Emote.COLUMN_HASH);
+					final int POS_IMAGE = c
+							.getColumnIndex(EmotesContract.Emote.COLUMN_IMAGE);
+					do {
+						String hash = c.getString(POS_HASH);
+						if (!emotesHash.containsKey(hash)) {
+							batch.add(ContentProviderOperation
+									.newDelete(EmotesContract.Emote.CONTENT_URI)
+									.withSelection(
+											EmotesContract.Emote.COLUMN_HASH
+													+ "=?",
+											new String[] { hash }).build());
+
+							checkStorageAvailable();
+							File file = new File(c.getString(POS_IMAGE));
+							if (file.exists()) {
+								file.delete();
+							}
+						}
+					} while (c.moveToNext());
+				}
+
+				c.close();
+
+				applyBatch(batch);
+			}
+		}
+		return emotes;
+	}
+
+	private List<EmoteImage> downloadEmoteList() throws URISyntaxException,
+			IOException {
 		HttpRequestBase request = new HttpGet();
 		request.setURI(new URI(HOST + EMOTES));
 		request.setHeader("If-Modified-Since",
@@ -204,11 +297,13 @@ public class EmoteDownloader {
 				InputStream is = entity.getContent();
 				GZIPInputStream zis = new GZIPInputStream(is);
 				try {
-					Type mapType = new TypeToken<HashMap<String, EmoteData>>() {
+					Type mapType = new TypeToken<ArrayList<EmoteImage>>() {
 					}.getType();
 
 					Reader reader = new InputStreamReader(zis, "UTF-8");
-					return new Gson().fromJson(reader, mapType);
+					ArrayList<EmoteImage> emotes = new Gson().fromJson(reader,
+							mapType);
+					return emotes;
 				} finally {
 					zis.close();
 					is.close();
@@ -224,60 +319,53 @@ public class EmoteDownloader {
 		return null;
 	}
 
-	private void downloadEmotes(Map<String, EmoteData> emotes,
-			SyncResult syncResult) throws URISyntaxException, IOException {
-		// Create .nomedia file to stop android from indexing the
-		// emote images
+	private void downloadEmotes(List<EmoteImage> emotes, SyncResult syncResult)
+			throws URISyntaxException, IOException, InterruptedException {
+		// Create .nomedia file to stop android from indexing the emote images
 		this.checkStorageAvailable();
-		File nomedia = new File(mBaseDir + ".nomedia");
+		File nomedia = new File(mBaseDir, ".nomedia");
 		if (!nomedia.exists()) {
 			nomedia.getParentFile().mkdirs();
 			nomedia.createNewFile();
 		}
 
-		for (Map.Entry<String, EmoteData> emote : emotes.entrySet()) {
+		int i = 0;
+		while (i < emotes.size()) {
+			EmoteImage emote = emotes.get(i);
 			try {
-				if (!downloadEmote(emote.getValue())) {
-					emotes.remove(emote.getKey());
+				if (!downloadEmote(emote)) {
+					emotes.remove(i);
+					continue;
 				}
 			} catch (DownloadException e) {
 				Log.e(TAG, e.getMessage(), e);
-				emotes.remove(emote.getKey());
+				emotes.remove(i);
 				syncResult.stats.numIoExceptions++;
-				syncResult.delayUntil = 6 * 60 * 60; // No point in retrying
-														// straight away
+				// No point in retrying straight away
+				syncResult.delayUntil = 6 * 60 * 60;
+				continue;
 			}
+			i++;
 		}
 	}
 
-	private boolean downloadEmote(EmoteData emote) throws IOException,
-			URISyntaxException {
-		if (emote.isNsfw() && !mDownloadNSFW) {
-			return false;
-		}
+	private boolean downloadEmote(EmoteImage emote) throws IOException,
+			URISyntaxException, InterruptedException {
 
-		for (EmoteData.Image image : emote.getImages()) {
-			this.downloadImage(image);
-		}
-		return true;
-	}
-
-	private void downloadImage(EmoteData.Image image) throws IOException,
-			URISyntaxException {
+		Thread.sleep(0);
 		this.checkStorageAvailable();
-
-		File file = new File(mBaseDir + image.getImage());
+		File file = new File(mBaseDir, emote.getImage());
 
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
 
 			this.checkCanDownload();
 			HttpGet request = new HttpGet();
-			request.setURI(new URI(HOST + image.getImage()));
+			request.setURI(new URI(HOST + emote.getImage()));
 			HttpResponse response = mHttpClient.execute(request);
 			if (response.getStatusLine().getStatusCode() != 200) {
 				throw new DownloadException("Download failed for \""
-						+ image.getImage()
+						+ emote.getImage()
 						+ "\" code: "
 						+ String.valueOf(response.getStatusLine()
 								.getStatusCode()));
@@ -286,11 +374,14 @@ public class EmoteDownloader {
 			HttpEntity entity = response.getEntity();
 			if (entity == null) {
 				throw new DownloadException("Download failed for \""
-						+ image.getImage() + "\"");
+						+ emote.getImage() + "\"");
 			}
 			InputStream is = entity.getContent();
 			try {
-				OutputStream os = new FileOutputStream(file);
+				File tmpFile = new File(file.getAbsolutePath() + ".tmp");
+				if (tmpFile.exists())
+					tmpFile.delete();
+				OutputStream os = new FileOutputStream(tmpFile);
 				try {
 					byte[] buffer = new byte[1024];
 					int read;
@@ -303,25 +394,76 @@ public class EmoteDownloader {
 				} finally {
 					os.close();
 				}
+				tmpFile.renameTo(file);
 			} finally {
 				is.close();
 			}
 		}
+
+		return file.exists();
 	}
 
-	public void updateEmotes(Map<String, EmoteData> emotes,
-			SyncResult syncResult) {
-		ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+	public void updateEmotes(List<EmoteImage> emotes, SyncResult syncResult)
+			throws RemoteException, OperationApplicationException {
 
-		// Delete everything
-		syncResult.stats.numDeletes += mContentResolver.delete(
-				EmotesContract.Emote.CONTENT_URI, null, null);
+		// Build map of entries
+		HashMap<String, EmoteImage> emoteHash = new HashMap<String, EmoteImage>();
+		for (EmoteImage emote : emotes) {
+			emoteHash.put(emote.getHash(), emote);
+		}
+
+		Cursor c = mContentResolver.query(
+				EmotesContract.Emote.CONTENT_URI_DISTINCT, new String[] {
+						EmotesContract.Emote._ID,
+						EmotesContract.Emote.COLUMN_NAME,
+						EmotesContract.Emote.COLUMN_HASH }, null, null, null);
+		if (c != null) {
+			ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+
+			if (c.moveToFirst()) {
+				final int POS_ID = c.getColumnIndex(EmotesContract.Emote._ID);
+				final int POS_NAME = c
+						.getColumnIndex(EmotesContract.Emote.COLUMN_NAME);
+				final int POS_HASH = c
+						.getColumnIndex(EmotesContract.Emote.COLUMN_HASH);
+
+				do {
+					String hash = c.getString(POS_HASH);
+					String name = c.getString(POS_NAME);
+					EmoteImage emote = emoteHash.get(hash);
+					if (emote != null) {
+						if (emote.getNames().contains(name)) {
+							emote.getNames().remove(name);
+							if (emote.getNames().size() == 0) {
+								// Already in db, no need to insert
+								emoteHash.remove(hash);
+								emotes.remove(emote);
+							}
+						} else {
+							Uri deleteUri = EmotesContract.Emote.CONTENT_URI
+									.buildUpon()
+									.appendPath(
+											Integer.toString(c.getInt(POS_ID)))
+									.build();
+							batch.add(ContentProviderOperation.newDelete(
+									deleteUri).build());
+							syncResult.stats.numDeletes++;
+						}
+					}
+				} while (c.moveToNext());
+			}
+
+			c.close();
+
+			// Delete all emotes that no longer exist
+			applyBatch(batch);
+		}
 
 		// Generate batch insert
-		for (Map.Entry<String, EmoteData> entry : emotes.entrySet()) {
-			String name = entry.getKey();
-			EmoteData emote = entry.getValue();
-			for (EmoteData.Image image : emote.getImages()) {
+		ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+		String baseDir = mBaseDir.getAbsolutePath() + File.separator;
+		for (EmoteImage emote : emotes) {
+			for (String name : emote.getNames()) {
 				batch.add(ContentProviderOperation
 						.newInsert(EmotesContract.Emote.CONTENT_URI)
 						.withValue(EmotesContract.Emote.COLUMN_NAME, name)
@@ -330,29 +472,28 @@ public class EmoteDownloader {
 						.withValue(EmotesContract.Emote.COLUMN_APNG,
 								(emote.isApng() ? 1 : 0))
 						.withValue(EmotesContract.Emote.COLUMN_IMAGE,
-								mBaseDir + image.getImage())
+								baseDir + emote.getImage())
+						.withValue(EmotesContract.Emote.COLUMN_HASH,
+								emote.getHash())
 						.withValue(EmotesContract.Emote.COLUMN_INDEX,
-								image.getIndex())
+								emote.getIndex())
 						.withValue(EmotesContract.Emote.COLUMN_DELAY,
-								image.getDelay()).build());
+								emote.getDelay()).build());
 				syncResult.stats.numInserts++;
 			}
 		}
-		try {
-			mContentResolver
-					.applyBatch(EmotesContract.CONTENT_AUTHORITY, batch);
-			mContentResolver.notifyChange( //
-					EmotesContract.Emote.CONTENT_URI, // URI where data was
-														// modified
-					null, // No local observer
-					false); // IMPORTANT: Do not sync to network
-		} catch (RemoteException e) {
-			Log.e(TAG, "Error updating database: " + e.toString());
-			syncResult.databaseError = true;
-		} catch (OperationApplicationException e) {
-			Log.e(TAG, "Error updating database: " + e.toString());
-			syncResult.databaseError = true;
-		}
+
+		applyBatch(batch);
+	}
+
+	private void applyBatch(ArrayList<ContentProviderOperation> operations)
+			throws RemoteException, OperationApplicationException {
+		mContentResolver.applyBatch(EmotesContract.CONTENT_AUTHORITY,
+				operations);
+		mContentResolver.notifyChange(//
+				EmotesContract.Emote.CONTENT_URI, // URI where data was modified
+				null, // No local observer
+				false); // IMPORTANT: Do not sync to network
 	}
 
 	public class NetworkReceiver extends BroadcastReceiver {
