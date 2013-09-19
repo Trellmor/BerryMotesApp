@@ -43,7 +43,7 @@ import com.trellmor.berrymotes.sync.SyncAdapter;
  * thread safe.
  */
 public class SelectionBuilder {
-	private static final String TAG = SyncAdapter.class.getName();
+	private static final String TAG = SelectionBuilder.class.getName();
 
     private String mTable = null;
     private Map<String, String> mProjectionMap = new HashMap<String, String>();

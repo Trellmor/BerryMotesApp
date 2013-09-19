@@ -71,7 +71,7 @@ import com.trellmor.berrymotes.util.NetworkNotAvailableException;
 import com.trellmor.berrymotes.util.StorageNotAvailableException;
 
 public class EmoteDownloader {
-	private static final String TAG = SyncAdapter.class.getName();
+	private static final String TAG = EmoteDownloader.class.getName();
 
 	private static final String HOST = "http://berrymotes.pew.cc/";
 	private static final String EMOTES = "emotes.json.gz";
@@ -157,10 +157,10 @@ public class EmoteDownloader {
 			syncResult.delayUntil = 30 * 60;
 			return;
 		} catch (RemoteException e) {
-			Log.e(TAG, "Error updating database: " + e.toString());
+			Log.e(TAG, "Error updating database: " + e.toString(), e);
 			syncResult.databaseError = true;
 		} catch (OperationApplicationException e) {
-			Log.e(TAG, "Error updating database: " + e.toString());
+			Log.e(TAG, "Error updating database: " + e.toString(), e);
 			syncResult.databaseError = true;
 		} finally {
 			mHttpClient.close();
