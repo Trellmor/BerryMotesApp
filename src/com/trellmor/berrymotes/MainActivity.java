@@ -19,23 +19,56 @@
 package com.trellmor.berrymotes;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 import com.trellmor.berrymotes.R;
+import com.trellmor.berrymotes.sync.EmoteDownloader;
+import com.trellmor.berrymotes.sync.SyncService;
 import com.trellmor.berrymotes.sync.SyncUtils;
 
 public class MainActivity extends Activity {
+	private static final String PREF_FIRST_RUN = "first_run";
+
+	private TextView mTextStatus;
+	private TextView mTextStatusMessage;
+
+	private final Handler mHandler = new Handler();
+	private final Runnable mTimerTask = new Runnable() {
+
+		@Override
+		public void run() {
+			refreshServiceStatus();
+			mHandler.postDelayed(this, 1000);
+		}
+	};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		mTextStatus = (TextView) findViewById(R.id.text_status);
+		mTextStatusMessage = (TextView) findViewById(R.id.text_status_message);
+
 		SyncUtils.createSyncAccount(this);
+
+		if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
+				PREF_FIRST_RUN, false)) {
+			showInfo();
+			PreferenceManager.getDefaultSharedPreferences(this).edit()
+					.putBoolean(PREF_FIRST_RUN, true).commit();
+		}
 	}
 
 	@Override
@@ -44,11 +77,28 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
-	
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+
+		mHandler.postDelayed(mTimerTask, 0);
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+
+		mHandler.removeCallbacks(mTimerTask);
+	}
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		Intent intent = null;
 		switch (item.getItemId()) {
+		case R.id.menu_info:
+			showInfo();
+			return true;
 		case R.id.menu_settings:
 			intent = new Intent(this, SettingsActivity.class);
 			startActivity(intent);
@@ -56,22 +106,70 @@ public class MainActivity extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
-	
 
 	public void buttonSyncClick(View view) {
 		sync();
 	}
-	
+
 	public void buttonCancelClick(View view) {
 		cancel();
 	}
-	
+
 	private void sync() {
 		SyncUtils.triggerRefresh();
+		refreshServiceStatus();
 	}
-	
+
 	private void cancel() {
 		SyncUtils.cancelSync();
 	}
 
+	private void showInfo() {
+		LayoutInflater infalter = LayoutInflater.from(this);
+		View view = infalter.inflate(R.layout.dialog_info, null);
+
+		AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+		alertDialog.setTitle(R.string.title_dialog_info);
+		alertDialog.setView(view);
+		alertDialog.setPositiveButton(android.R.string.ok, null);
+		alertDialog.create().show();
+	}
+
+	private void refreshServiceStatus() {
+		mTextStatus.setVisibility(View.VISIBLE);
+
+		if (SyncService.isServiceRunning(this)) {
+			mTextStatus.setTextColor(Color.GREEN);
+			mTextStatus.setText(R.string.status_running);
+			mTextStatusMessage.setVisibility(View.INVISIBLE);
+		} else {
+			SharedPreferences settings = PreferenceManager
+					.getDefaultSharedPreferences(this);
+			switch (settings.getInt(EmoteDownloader.PREF_SYNC_STATUS, 0)) {
+			case EmoteDownloader.STATUS_OK:
+				mTextStatus.setTextColor(Color.GREEN);
+				mTextStatus.setText(android.R.string.ok);
+				mTextStatusMessage.setVisibility(View.INVISIBLE);
+				break;
+			case EmoteDownloader.STATUS_ABORTED:
+				mTextStatus.setTextColor(Color.GREEN);
+				mTextStatus.setText(R.string.status_aborted);
+				mTextStatusMessage.setVisibility(View.VISIBLE);
+				mTextStatusMessage.setText(settings.getString(
+						EmoteDownloader.PREF_SYNC_STATUS_MESSAGE, ""));
+				break;
+			case EmoteDownloader.STATUS_FAILED:
+				mTextStatus.setTextColor(Color.RED);
+				mTextStatus.setText(R.string.status_failed);
+				mTextStatusMessage.setVisibility(View.VISIBLE);
+				mTextStatusMessage.setText(settings.getString(
+						EmoteDownloader.PREF_SYNC_STATUS_MESSAGE, ""));
+				break;
+			default:
+				mTextStatus.setVisibility(View.INVISIBLE);
+				mTextStatusMessage.setVisibility(View.INVISIBLE);
+				break;
+			}
+		}
+	}
 }

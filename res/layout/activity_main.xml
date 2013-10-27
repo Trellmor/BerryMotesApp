@@ -15,7 +15,6 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -43,13 +42,29 @@
         android:onClick="buttonCancelClick" />
 
     <TextView
-        android:id="@+id/text_info"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:singleLine="false"
-        android:layout_below="@+id/button_sync"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
-        android:text="@string/text_info" />
+        android:id="@+id/text_status_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/button_sync"
+        android:text="@string/text_status"
+        android:paddingRight="3dp"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+    
+	<TextView
+        android:id="@+id/text_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/button_sync"
+        android:layout_toRightOf="@id/text_status_title"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/text_status_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/text_status"
+        android:visibility="invisible" />
 
 </RelativeLayout>

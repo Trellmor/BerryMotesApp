@@ -18,17 +18,20 @@
 
 package com.trellmor.berrymotes.sync;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 
 public class SyncService extends Service {
 	// Storage for sync adapter
 	private static SyncAdapter sSyncAdapter = null;
-	
+
 	// Object for thread safe locking
 	private static final Object sSyncAdapterLock = new Object();
-	
+
 	@Override
 	public void onCreate() {
 		synchronized (sSyncAdapterLock) {
@@ -39,19 +42,30 @@ public class SyncService extends Service {
 	}
 
 	/**
-	 * Return an object that allows the system to invoke
-	 * the sync adapter.
-	 *
+	 * Return an object that allows the system to invoke the sync adapter.
+	 * 
 	 */
-	
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		/*
-		 * Get the object that allows external processes
-		 * to call onPerformSync(). The object is created
-		 * in the base class code when the SyncAdapter
-		 * constructors call super()
+		 * Get the object that allows external processes to call
+		 * onPerformSync(). The object is created in the base class code when
+		 * the SyncAdapter constructors call super()
 		 */
 		return sSyncAdapter.getSyncAdapterBinder();
+	}
+
+	public static boolean isServiceRunning(Context context) {
+		ActivityManager manager = (ActivityManager) context
+				.getSystemService(Context.ACTIVITY_SERVICE);
+		for (RunningServiceInfo service : manager
+				.getRunningServices(Integer.MAX_VALUE)) {
+			if (SyncService.class.getName().equals(
+					service.service.getClassName())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

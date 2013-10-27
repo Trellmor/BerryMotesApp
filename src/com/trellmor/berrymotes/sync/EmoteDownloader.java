@@ -89,6 +89,14 @@ public class EmoteDownloader {
 
 	private File mBaseDir;
 	private final ContentResolver mContentResolver;
+	
+	public static final String PREF_SYNC_STATUS = "sync_status";
+	public static final String PREF_SYNC_STATUS_MESSAGE = "sync_status_message";
+	
+	public static final int STATUS_UNKNOW = -1;
+	public static final int STATUS_OK = 0;
+	public static final int STATUS_FAILED = 1;
+	public static final int STATUS_ABORTED = 2;
 
 	public EmoteDownloader(Context context) {
 		mContext = context;
@@ -114,6 +122,8 @@ public class EmoteDownloader {
 	}
 
 	public void start(SyncResult syncResult) throws InterruptedException {
+		setSyncStatus(STATUS_UNKNOW, "");
+		
 		this.updateNetworkInfo();
 
 		if (!mIsConnected) {
@@ -144,24 +154,44 @@ public class EmoteDownloader {
 							.edit()
 							.putLong(SettingsActivity.KEY_SYNC_LAST_MODIFIED,
 									mLastModified.getTime()).commit();
+
+					setSyncStatus(STATUS_OK, "");
+				} else {
+					setSyncStatus(STATUS_FAILED, "");
 				}
+			} else {
+				setSyncStatus(STATUS_OK, "");
 			}
 		} catch (URISyntaxException e) {
 			Log.wtf(TAG, "Emotes URL is malformed", e);
 			syncResult.stats.numParseExceptions++;
 			syncResult.delayUntil = 60 * 60;
+			setSyncStatus(STATUS_FAILED, e.getMessage());
 			return;
 		} catch (IOException e) {
 			Log.e(TAG, "Error reading from network: " + e.toString(), e);
 			syncResult.stats.numIoExceptions++;
 			syncResult.delayUntil = 30 * 60;
+			
+			if (e instanceof NetworkNotAvailableException) {
+				setSyncStatus(STATUS_ABORTED, e.getMessage());
+			} else if (e instanceof StorageNotAvailableException) {
+				setSyncStatus(STATUS_ABORTED, e.getMessage());
+			} else {
+				setSyncStatus(STATUS_FAILED, e.getMessage());
+			}
 			return;
 		} catch (RemoteException e) {
 			Log.e(TAG, "Error updating database: " + e.toString(), e);
 			syncResult.databaseError = true;
+			setSyncStatus(STATUS_FAILED, e.getMessage());
 		} catch (OperationApplicationException e) {
 			Log.e(TAG, "Error updating database: " + e.toString(), e);
 			syncResult.databaseError = true;
+			setSyncStatus(STATUS_FAILED, e.getMessage());
+		} catch (InterruptedException e) {
+			setSyncStatus(STATUS_ABORTED, e.getMessage());
+			throw e;
 		} finally {
 			mHttpClient.close();
 		}
@@ -494,6 +524,14 @@ public class EmoteDownloader {
 				EmotesContract.Emote.CONTENT_URI, // URI where data was modified
 				null, // No local observer
 				false); // IMPORTANT: Do not sync to network
+	}
+	
+	private void setSyncStatus(int status, String message) {
+		SharedPreferences.Editor settings = PreferenceManager
+				.getDefaultSharedPreferences(mContext).edit();
+		settings.putInt(PREF_SYNC_STATUS, status);
+		settings.putString(PREF_SYNC_STATUS_MESSAGE, message);
+		settings.commit();
 	}
 
 	public class NetworkReceiver extends BroadcastReceiver {

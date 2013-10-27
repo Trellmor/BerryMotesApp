@@ -1,4 +1,4 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+<?xml version="1.0" encoding="utf-8"?>
 
 <!-- 
 	BerryMotes android 
@@ -17,17 +17,24 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-    
-	<item
-        android:id="@+id/menu_info"
-        android:orderInCategory="200"
-        android:showAsAction="never"
-        android:title="@string/menu_info"/>    
-    
-    <item
-        android:id="@+id/menu_settings"
-        android:orderInCategory="200"
-        android:showAsAction="never"
-        android:title="@string/menu_settings"/>
 
-</menu>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        android:padding="10dp">
+        
+        <TextView 
+            android:id="@+id/text_info"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="@string/text_info"
+            android:autoLink="web|email" />
+    </LinearLayout>
+    
+
+</ScrollView>
