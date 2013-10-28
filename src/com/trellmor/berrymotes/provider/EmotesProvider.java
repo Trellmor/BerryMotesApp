@@ -92,7 +92,7 @@ public class EmotesProvider extends ContentProvider {
 			builder.table(EmotesContract.Emote.TABLE_NAME).where(selection,
 					selectionArgs);
 
-			if (PreferenceManager.getDefaultSharedPreferences(getContext())
+			if (!PreferenceManager.getDefaultSharedPreferences(getContext())
 					.getBoolean(SettingsActivity.KEY_SHOW_NSFW, false)) {
 				builder.where(EmotesContract.Emote.COLUMN_NSFW + "=?", "0");
 			}
