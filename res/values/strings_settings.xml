@@ -27,7 +27,6 @@
 
     <!-- Settings for Data & Sync -->
     <string name="pref_header_data_sync">Data &amp; sync</string>
-    <string name="pref_description_data_sync">Sync frequency, data usage, etc.</string>
     
     <string name="pref_title_sync_connection">Download emotes</string>
     <string name="pref_description_sync_connection_all">When there is a Wi-Fi or mobile data connection available</string>
