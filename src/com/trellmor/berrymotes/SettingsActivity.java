@@ -54,8 +54,9 @@ public class SettingsActivity extends PreferenceActivity {
 
 	public final static String VALUE_SYNC_CONNECTION_WIFI = "wifi";
 	public final static String VALUE_SYNC_CONNECTION_ALL = "all";
-	
-	public final static String DEFALT_SYNC_SUBREDDITS = "#ALL";
+
+	public final static String DEFAULT_SYNC_SUBREDDITS = "#ALL#";
+	public final static String ALL_KEY_SYNC_SUBREDDITS = "#ALL#";
 	public final static String SEPERATOR_SYNC_SUBREDDITS = ";";
 
 	@SuppressLint("NewApi")

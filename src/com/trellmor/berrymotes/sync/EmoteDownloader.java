@@ -116,9 +116,9 @@ public class EmoteDownloader {
 				SettingsActivity.KEY_SYNC_LAST_MODIFIED, 0));
 		mSubreddits = new CheckListPreference(settings.getString(
 				SettingsActivity.KEY_SYNC_SUBREDDITS,
-				SettingsActivity.DEFALT_SYNC_SUBREDDITS),
+				SettingsActivity.DEFAULT_SYNC_SUBREDDITS),
 				SettingsActivity.SEPERATOR_SYNC_SUBREDDITS,
-				SettingsActivity.DEFALT_SYNC_SUBREDDITS);
+				SettingsActivity.ALL_KEY_SYNC_SUBREDDITS);
 
 		mBaseDir = mContext.getExternalFilesDir(null);
 
