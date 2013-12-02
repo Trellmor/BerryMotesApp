@@ -46,25 +46,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_below="@id/button_sync"
+        android:layout_below="@id/button_cancel"
         android:text="@string/text_status"
-        android:paddingRight="3dp"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        android:paddingRight="3dp" />
     
 	<TextView
         android:id="@+id/text_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/button_sync"
-        android:layout_toRightOf="@id/text_status_title"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    <TextView
-        android:id="@+id/text_status_message"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@id/text_status"
-        android:visibility="invisible" />
+        android:layout_below="@id/button_cancel"
+        android:layout_toRightOf="@id/text_status_title" />
 
 </RelativeLayout>

@@ -28,8 +28,7 @@
     <string name="text_status">Status:</string>
     <string name="title_dialog_info">Information</string>
     <string name="status_running">Running</string>
-    <string name="status_failed">Failed</string>
-    <string name="status_aborted">Aborted</string>
+    <string name="status_idle">Idle</string>
     <string name="text_info">"BerryMotes
 
 Open settings to configure BerryMotes.

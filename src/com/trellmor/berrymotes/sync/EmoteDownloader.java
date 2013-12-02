@@ -41,6 +41,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentProviderOperation;
@@ -59,20 +61,22 @@ import android.net.http.AndroidHttpClient;
 import android.os.Environment;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
-import android.util.Log;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.android.BasicLogcatConfigurator;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.FileAppender;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.trellmor.berrymotes.provider.EmotesContract;
 import com.trellmor.berrymotes.SettingsActivity;
+import com.trellmor.berrymotes.provider.EmotesContract;
 import com.trellmor.berrymotes.util.CheckListPreference;
 import com.trellmor.berrymotes.util.DownloadException;
 import com.trellmor.berrymotes.util.NetworkNotAvailableException;
 import com.trellmor.berrymotes.util.StorageNotAvailableException;
 
 public class EmoteDownloader {
-	private static final String TAG = EmoteDownloader.class.getName();
-
 	private static final String HOST = "http://berrymotes.pew.cc/";
 	private static final String EMOTES = "emotes.json.gz";
 
@@ -81,6 +85,7 @@ public class EmoteDownloader {
 	private boolean mWiFiOnly;
 	private Date mLastModified;
 	private CheckListPreference mSubreddits;
+	private Logger Log;
 
 	private int mNetworkType;
 	private boolean mIsConnected;
@@ -92,15 +97,14 @@ public class EmoteDownloader {
 	
 	public static final String PREF_SYNC_STATUS = "sync_status";
 	public static final String PREF_SYNC_STATUS_MESSAGE = "sync_status_message";
-	
-	public static final int STATUS_UNKNOW = -1;
-	public static final int STATUS_OK = 0;
-	public static final int STATUS_FAILED = 1;
-	public static final int STATUS_ABORTED = 2;
 
 	public EmoteDownloader(Context context) {
 		mContext = context;
 
+		initLogging();
+		
+		Log = LoggerFactory.getLogger(EmoteDownloader.class);
+		
 		SharedPreferences settings = PreferenceManager
 				.getDefaultSharedPreferences(context);
 		mDownloadNSFW = settings.getBoolean(SettingsActivity.KEY_SYNC_NSFW,
@@ -122,12 +126,12 @@ public class EmoteDownloader {
 	}
 
 	public void start(SyncResult syncResult) throws InterruptedException {
-		setSyncStatus(STATUS_UNKNOW, "");
+		Log.info("EmoteDownload started");
 		
 		this.updateNetworkInfo();
 
 		if (!mIsConnected) {
-			Log.e(TAG, "Network not available");
+			Log.error("Network not available");
 			syncResult.stats.numIoExceptions++;
 			return;
 		}
@@ -149,55 +153,38 @@ public class EmoteDownloader {
 
 				// If everything is ok, update the last modified date
 				if (!syncResult.hasError()) {
+					Log.info("Updaing LAST_MODIFIED time to " + mLastModified.toString());
 					PreferenceManager
 							.getDefaultSharedPreferences(mContext)
 							.edit()
 							.putLong(SettingsActivity.KEY_SYNC_LAST_MODIFIED,
 									mLastModified.getTime()).commit();
-
-					setSyncStatus(STATUS_OK, "");
-				} else {
-					setSyncStatus(STATUS_FAILED, "");
 				}
-			} else {
-				setSyncStatus(STATUS_OK, "");
 			}
 		} catch (URISyntaxException e) {
-			Log.wtf(TAG, "Emotes URL is malformed", e);
+			Log.error("Emotes URL is malformed", e);
 			syncResult.stats.numParseExceptions++;
 			syncResult.delayUntil = 60 * 60;
-			setSyncStatus(STATUS_FAILED, e.getMessage());
 			return;
 		} catch (IOException e) {
-			Log.e(TAG, "Error reading from network: " + e.toString(), e);
+			Log.error("Error reading from network: " + e.toString(), e);
 			syncResult.stats.numIoExceptions++;
 			syncResult.delayUntil = 30 * 60;
-			
-			if (e instanceof NetworkNotAvailableException) {
-				setSyncStatus(STATUS_ABORTED, e.getMessage());
-			} else if (e instanceof StorageNotAvailableException) {
-				setSyncStatus(STATUS_ABORTED, e.getMessage());
-			} else {
-				setSyncStatus(STATUS_FAILED, e.getMessage());
-			}
 			return;
 		} catch (RemoteException e) {
-			Log.e(TAG, "Error updating database: " + e.toString(), e);
+			Log.error("Error updating database: " + e.toString(), e);
 			syncResult.databaseError = true;
-			setSyncStatus(STATUS_FAILED, e.getMessage());
 		} catch (OperationApplicationException e) {
-			Log.e(TAG, "Error updating database: " + e.toString(), e);
+			Log.error("Error updating database: " + e.toString(), e);
 			syncResult.databaseError = true;
-			setSyncStatus(STATUS_FAILED, e.getMessage());
-		} catch (InterruptedException e) {
-			setSyncStatus(STATUS_ABORTED, e.getMessage());
-			throw e;
 		} finally {
 			mHttpClient.close();
 		}
 
 		// Unregisters BroadcastReceiver at the end
 		mContext.unregisterReceiver(receiver);
+		
+		Log.info("EmoteDownload finished");
 	}
 
 	private void updateNetworkInfo() {
@@ -242,6 +229,7 @@ public class EmoteDownloader {
 
 	private List<EmoteImage> getEmoteList() throws URISyntaxException,
 			IOException, RemoteException, OperationApplicationException {
+		Log.debug("Getting emote list");
 		List<EmoteImage> emotes = downloadEmoteList();
 		if (emotes != null) {
 			HashMap<String, EmoteImage> emotesHash = new HashMap<String, EmoteImage>();
@@ -249,9 +237,11 @@ public class EmoteDownloader {
 			while (i < emotes.size()) {
 				EmoteImage emote = emotes.get(i);
 				if (!mSubreddits.isChecked(emote.getSubreddit())) {
+					Log.debug("Skipped emote " + emote.getImage() + " (Subreddit ignored)");
 					emotes.remove(i);
 					continue;
 				} else if (!mDownloadNSFW && emote.isNsfw()) {
+					Log.debug("Skipped emote " + emote.getImage() + " (NSFW)");
 					emotes.remove(i);
 					continue;
 				} else {
@@ -259,6 +249,7 @@ public class EmoteDownloader {
 				}
 				i++;
 			}
+			Log.info("Removed ignored emotes, " + Integer.toString(emotesHash.size()) + " left.");
 
 			Cursor c = mContentResolver.query(
 					EmotesContract.Emote.CONTENT_URI_DISTINCT, new String[] {
@@ -276,6 +267,7 @@ public class EmoteDownloader {
 					do {
 						String hash = c.getString(POS_HASH);
 						if (!emotesHash.containsKey(hash)) {
+							Log.debug("Removing " + c.getString(POS_IMAGE) + " (" + hash + ") (not in emote list)");
 							batch.add(ContentProviderOperation
 									.newDelete(EmotesContract.Emote.CONTENT_URI)
 									.withSelection(
@@ -294,7 +286,9 @@ public class EmoteDownloader {
 
 				c.close();
 
+				Log.debug("Removing emotes from DB");
 				applyBatch(batch);
+				Log.info("Removed " + Integer.toString(batch.size()) + " emotes from DB");
 			}
 		}
 		return emotes;
@@ -302,6 +296,8 @@ public class EmoteDownloader {
 
 	private List<EmoteImage> downloadEmoteList() throws URISyntaxException,
 			IOException {
+		
+		Log.debug("Downloading emote list");
 		HttpRequestBase request = new HttpGet();
 		request.setURI(new URI(HOST + EMOTES));
 		request.setHeader("If-Modified-Since",
@@ -311,6 +307,7 @@ public class EmoteDownloader {
 		HttpResponse response = mHttpClient.execute(request);
 		switch (response.getStatusLine().getStatusCode()) {
 		case 200:
+			Log.debug("emotes.json.gz loaded");
 			// Download ok
 			Header[] lastModified = response.getHeaders("last-modified");
 			if (lastModified.length > 0) {
@@ -318,7 +315,7 @@ public class EmoteDownloader {
 					mLastModified = DateUtils.parseDate(lastModified[0]
 							.getValue());
 				} catch (DateParseException e) {
-					Log.e(TAG, "Error parsing last-modified header", e);
+					Log.error("Error parsing last-modified header", e);
 				}
 			}
 
@@ -333,6 +330,8 @@ public class EmoteDownloader {
 					Reader reader = new InputStreamReader(zis, "UTF-8");
 					ArrayList<EmoteImage> emotes = new Gson().fromJson(reader,
 							mapType);
+
+					Log.info("Loaded emote list, size: " + Integer.toString(emotes.size()));
 					return emotes;
 				} finally {
 					zis.close();
@@ -341,6 +340,7 @@ public class EmoteDownloader {
 			}
 			break;
 		case 304:
+			Log.info("emote.json.gz already up to date (HTTP 304)");
 			break;
 		default:
 			throw new IOException("Unexpected HTTP response: "
@@ -351,6 +351,7 @@ public class EmoteDownloader {
 
 	private void downloadEmotes(List<EmoteImage> emotes, SyncResult syncResult)
 			throws URISyntaxException, IOException, InterruptedException {
+		Log.debug("Downloading emotes");
 		// Create .nomedia file to stop android from indexing the emote images
 		this.checkStorageAvailable();
 		File nomedia = new File(mBaseDir, ".nomedia");
@@ -364,15 +365,19 @@ public class EmoteDownloader {
 			EmoteImage emote = emotes.get(i);
 			try {
 				if (!downloadEmote(emote)) {
+					Log.warn("Failed to download " + emote.getImage());
 					emotes.remove(i);
 					continue;
 				}
 			} catch (DownloadException e) {
-				Log.e(TAG, e.getMessage(), e);
+				Log.error(e.getMessage(), e);
+				Log.info("Failed to download " + emote.getImage());
+				
 				emotes.remove(i);
 				syncResult.stats.numIoExceptions++;
 				// No point in retrying straight away
 				syncResult.delayUntil = 6 * 60 * 60;
+				
 				continue;
 			}
 			i++;
@@ -381,12 +386,14 @@ public class EmoteDownloader {
 
 	private boolean downloadEmote(EmoteImage emote) throws IOException,
 			URISyntaxException, InterruptedException {
-
 		Thread.sleep(0);
+		
 		this.checkStorageAvailable();
 		File file = new File(mBaseDir, emote.getImage());
 
 		if (!file.exists()) {
+			Log.debug("Downloading emote " + emote.getImage());
+			
 			file.getParentFile().mkdirs();
 
 			this.checkCanDownload();
@@ -406,6 +413,7 @@ public class EmoteDownloader {
 				throw new DownloadException("Download failed for \""
 						+ emote.getImage() + "\"");
 			}
+			
 			InputStream is = entity.getContent();
 			try {
 				File tmpFile = new File(file.getAbsolutePath() + ".tmp");
@@ -425,6 +433,7 @@ public class EmoteDownloader {
 					os.close();
 				}
 				tmpFile.renameTo(file);
+				Log.debug("Downloaded emote " + emote.getImage());
 			} finally {
 				is.close();
 			}
@@ -435,7 +444,8 @@ public class EmoteDownloader {
 
 	public void updateEmotes(List<EmoteImage> emotes, SyncResult syncResult)
 			throws RemoteException, OperationApplicationException {
-
+		Log.debug("Updating emote database");
+		
 		// Build map of entries
 		HashMap<String, EmoteImage> emoteHash = new HashMap<String, EmoteImage>();
 		for (EmoteImage emote : emotes) {
@@ -470,6 +480,7 @@ public class EmoteDownloader {
 								emotes.remove(emote);
 							}
 						} else {
+							Log.debug("Removing " + name + " (" + hash + ") from DB");
 							Uri deleteUri = EmotesContract.Emote.CONTENT_URI
 									.buildUpon()
 									.appendPath(
@@ -486,7 +497,9 @@ public class EmoteDownloader {
 			c.close();
 
 			// Delete all emotes that no longer exist
+			Log.debug("Removing emotes names from DB");
 			applyBatch(batch);
+			Log.info("Removed " + Integer.toString(batch.size()) + " emotes names from DB");
 		}
 
 		// Generate batch insert
@@ -494,6 +507,7 @@ public class EmoteDownloader {
 		String baseDir = mBaseDir.getAbsolutePath() + File.separator;
 		for (EmoteImage emote : emotes) {
 			for (String name : emote.getNames()) {
+				Log.debug("Adding " + name + " to DB");
 				batch.add(ContentProviderOperation
 						.newInsert(EmotesContract.Emote.CONTENT_URI)
 						.withValue(EmotesContract.Emote.COLUMN_NAME, name)
@@ -513,7 +527,10 @@ public class EmoteDownloader {
 			}
 		}
 
+
+		Log.debug("Adding emotes names to DB");
 		applyBatch(batch);
+		Log.info("Added " + Integer.toString(batch.size()) + " emotes names to DB");
 	}
 
 	private void applyBatch(ArrayList<ContentProviderOperation> operations)
@@ -526,12 +543,33 @@ public class EmoteDownloader {
 				false); // IMPORTANT: Do not sync to network
 	}
 	
-	private void setSyncStatus(int status, String message) {
-		SharedPreferences.Editor settings = PreferenceManager
-				.getDefaultSharedPreferences(mContext).edit();
-		settings.putInt(PREF_SYNC_STATUS, status);
-		settings.putString(PREF_SYNC_STATUS_MESSAGE, message);
-		settings.commit();
+	private void initLogging() {
+		// reset the default context (which may already have been initialized)
+		// since we want to reconfigure it
+		LoggerContext lc = (LoggerContext)LoggerFactory.getILoggerFactory();
+	    lc.reset();
+	    
+	    // Log to logcat
+	    BasicLogcatConfigurator.configureDefaultContext();
+	    
+	    // If logging is enabled in settings, also log to file
+	    SharedPreferences settings = PreferenceManager
+				.getDefaultSharedPreferences(mContext);
+	    if (settings.getBoolean(SettingsActivity.KEY_LOG, false)) {
+	    	PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+	    	encoder.setContext(lc);
+	    	encoder.setPattern("%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n");
+	    	encoder.start();
+	    	
+	    	FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
+	    	fileAppender.setContext(lc);
+	    	fileAppender.setFile(new File(mContext.getFilesDir(), "EmoteDownloader.log").getAbsolutePath());
+	    	fileAppender.setEncoder(encoder);
+	    	fileAppender.start();
+	    	
+	    	ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+	    	root.addAppender(fileAppender);
+	    }
 	}
 
 	public class NetworkReceiver extends BroadcastReceiver {

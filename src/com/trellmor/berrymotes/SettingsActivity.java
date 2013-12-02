@@ -50,6 +50,7 @@ public class SettingsActivity extends PreferenceActivity {
 	public final static String KEY_SYNC_FREQUENCY = "sync_frequency";
 	public final static String KEY_SYNC_LAST_MODIFIED = "sync_last_modified";
 	public final static String KEY_SYNC_SUBREDDITS = "sync_subreddits";
+	public final static String KEY_LOG = "log";
 
 	public final static String VALUE_SYNC_CONNECTION_WIFI = "wifi";
 	public final static String VALUE_SYNC_CONNECTION_ALL = "all";

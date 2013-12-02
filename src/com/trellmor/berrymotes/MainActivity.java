@@ -41,7 +41,6 @@ public class MainActivity extends Activity {
 	private static final String PREF_FIRST_RUN = "first_run";
 
 	private TextView mTextStatus;
-	private TextView mTextStatusMessage;
 
 	private final Handler mHandler = new Handler();
 	private final Runnable mTimerTask = new Runnable() {
@@ -59,7 +58,6 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 
 		mTextStatus = (TextView) findViewById(R.id.text_status);
-		mTextStatusMessage = (TextView) findViewById(R.id.text_status_message);
 
 		SyncUtils.createSyncAccount(this);
 
@@ -139,37 +137,9 @@ public class MainActivity extends Activity {
 		mTextStatus.setVisibility(View.VISIBLE);
 
 		if (SyncService.isServiceRunning(this)) {
-			mTextStatus.setTextColor(Color.GREEN);
 			mTextStatus.setText(R.string.status_running);
-			mTextStatusMessage.setVisibility(View.INVISIBLE);
 		} else {
-			SharedPreferences settings = PreferenceManager
-					.getDefaultSharedPreferences(this);
-			switch (settings.getInt(EmoteDownloader.PREF_SYNC_STATUS, 0)) {
-			case EmoteDownloader.STATUS_OK:
-				mTextStatus.setTextColor(Color.GREEN);
-				mTextStatus.setText(android.R.string.ok);
-				mTextStatusMessage.setVisibility(View.INVISIBLE);
-				break;
-			case EmoteDownloader.STATUS_ABORTED:
-				mTextStatus.setTextColor(Color.GREEN);
-				mTextStatus.setText(R.string.status_aborted);
-				mTextStatusMessage.setVisibility(View.VISIBLE);
-				mTextStatusMessage.setText(settings.getString(
-						EmoteDownloader.PREF_SYNC_STATUS_MESSAGE, ""));
-				break;
-			case EmoteDownloader.STATUS_FAILED:
-				mTextStatus.setTextColor(Color.RED);
-				mTextStatus.setText(R.string.status_failed);
-				mTextStatusMessage.setVisibility(View.VISIBLE);
-				mTextStatusMessage.setText(settings.getString(
-						EmoteDownloader.PREF_SYNC_STATUS_MESSAGE, ""));
-				break;
-			default:
-				mTextStatus.setVisibility(View.INVISIBLE);
-				mTextStatusMessage.setVisibility(View.INVISIBLE);
-				break;
-			}
+			mTextStatus.setText(R.string.status_idle);
 		}
 	}
 }
