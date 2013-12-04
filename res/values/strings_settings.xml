@@ -24,8 +24,6 @@
     <string name="pref_header_general">General</string>
     <string name="pref_title_show_nsfw">Display NSFW emotes</string>
     <string name="pref_description_show_nsfw">Show explicit emotes</string>
-    <string name="pref_title_log">Logging</string>
-    <string name="pref_description_log">Log emote download data</string>
 
     <!-- Settings for Data & Sync -->
     <string name="pref_header_data_sync">Data &amp; sync</string>
@@ -66,5 +64,13 @@
     </string-array>
 
     <string name="pref_title_system_sync_settings">System sync settings</string>
+    
+    <!-- Settings for Loggingc -->
+    <string name="pref_header_logging">Logging</string>
+    <string name="pref_title_log">Enable</string>
+    <string name="pref_description_log">Log emote download data</string>
+    <string name="pref_title_log_send">Send log</string>
+    <string name="pref_description_log_send">Send log file to the developer</string>
+    <string name="pref_title_log_delete">Delete log file</string>
 
 </resources>

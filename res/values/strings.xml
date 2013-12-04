@@ -38,5 +38,6 @@ Press sync to start a sync now.
 Press cancel to stop running syncs.
 
 The first sync can take a long time, especially if your network connection is slow."</string>
+	<string name="send_log_chooser">Send log...</string>
 
 </resources>

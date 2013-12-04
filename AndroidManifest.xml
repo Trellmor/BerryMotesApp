@@ -25,7 +25,7 @@
 
     <uses-sdk
         android:minSdkVersion="8"
-        android:targetSdkVersion="18" />
+        android:targetSdkVersion="19" />
 
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -53,6 +53,11 @@
             android:name="com.trellmor.berrymotes.provider.EmotesProvider"
             android:authorities="com.trellmor.berrymotes"
             android:exported="true" />
+        
+        <provider
+            android:name="com.trellmor.berrymotes.provider.FileProvider"
+            android:authorities="com.trellmor.berrymotes.files"
+            android:exported="true" />
 
         <service
             android:name="com.trellmor.berrymotes.sync.SyncService"
@@ -70,7 +75,7 @@
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
-            <!-- This points to an XMLf ile which describes our account service. -->
+            <!-- This points to an XML file which describes our account service. -->
             <meta-data
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator" />

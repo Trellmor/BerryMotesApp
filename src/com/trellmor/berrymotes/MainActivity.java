@@ -21,8 +21,6 @@ package com.trellmor.berrymotes;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -32,8 +30,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import com.trellmor.berrymotes.R;
-import com.trellmor.berrymotes.sync.EmoteDownloader;
 import com.trellmor.berrymotes.sync.SyncService;
 import com.trellmor.berrymotes.sync.SyncUtils;
 

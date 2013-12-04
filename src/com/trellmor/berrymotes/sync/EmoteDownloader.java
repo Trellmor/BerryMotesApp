@@ -97,6 +97,8 @@ public class EmoteDownloader {
 	
 	public static final String PREF_SYNC_STATUS = "sync_status";
 	public static final String PREF_SYNC_STATUS_MESSAGE = "sync_status_message";
+	
+	public static final String LOG_FILE_NAME = "EmoteDownloader.log";
 
 	public EmoteDownloader(Context context) {
 		mContext = context;
@@ -376,7 +378,7 @@ public class EmoteDownloader {
 				emotes.remove(i);
 				syncResult.stats.numIoExceptions++;
 				// No point in retrying straight away
-				syncResult.delayUntil = 6 * 60 * 60;
+				syncResult.delayUntil = 60 * 60;
 				
 				continue;
 			}
@@ -563,7 +565,7 @@ public class EmoteDownloader {
 	    	
 	    	FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
 	    	fileAppender.setContext(lc);
-	    	fileAppender.setFile(new File(mContext.getFilesDir(), "EmoteDownloader.log").getAbsolutePath());
+	    	fileAppender.setFile(new File(mContext.getFilesDir(), LOG_FILE_NAME).getAbsolutePath());
 	    	fileAppender.setEncoder(encoder);
 	    	fileAppender.start();
 	    	

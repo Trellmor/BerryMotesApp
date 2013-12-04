@@ -35,19 +35,17 @@ import com.trellmor.berrymotes.util.SelectionBuilder;
 public class EmotesProvider extends ContentProvider {
 	EmotesDatabase mDatabaseHelper;
 
-	private static final String AUTHORITY = EmotesContract.CONTENT_AUTHORITY;
-
-	public static final int ROUTE_EMOTES = 1;
-	public static final int ROUTE_EMOTES_ID = 2;
-	public static final int ROUTE_EMOTES_DISTINCT = 3;
+	private static final int ROUTE_EMOTES = 1;
+	private static final int ROUTE_EMOTES_ID = 2;
+	private static final int ROUTE_EMOTES_DISTINCT = 3;
 
 	private static final UriMatcher sUriMatcher = new UriMatcher(
 			UriMatcher.NO_MATCH);
 	static {
-		sUriMatcher.addURI(AUTHORITY, EmotesContract.PATH_EMOTES, ROUTE_EMOTES);
-		sUriMatcher.addURI(AUTHORITY, EmotesContract.PATH_EMOTES + "/*",
+		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY, EmotesContract.PATH_EMOTES, ROUTE_EMOTES);
+		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY, EmotesContract.PATH_EMOTES + "/*",
 				ROUTE_EMOTES_ID);
-		sUriMatcher.addURI(AUTHORITY, EmotesContract.PATH_EMOTES_DISTINCT,
+		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY, EmotesContract.PATH_EMOTES_DISTINCT,
 				ROUTE_EMOTES_DISTINCT);
 	}
 
