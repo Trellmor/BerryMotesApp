@@ -179,6 +179,9 @@ public class EmoteDownloader {
 		} catch (OperationApplicationException e) {
 			Log.error("Error updating database: " + e.toString(), e);
 			syncResult.databaseError = true;
+		} catch (InterruptedException e) {
+			Log.info("Sync interrupted");
+			throw e;
 		} finally {
 			mHttpClient.close();
 		}
