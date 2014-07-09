@@ -63,6 +63,8 @@ public class MainActivity extends Activity {
 			PreferenceManager.getDefaultSharedPreferences(this).edit()
 					.putBoolean(PREF_FIRST_RUN, true).commit();
 		}
+		
+		AlarmSetter.setAlarm(this);
 	}
 
 	@Override

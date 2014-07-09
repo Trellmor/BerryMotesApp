@@ -33,6 +33,7 @@
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -80,6 +81,8 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator" />
         </service>
+        
+        <service android:name="com.trellmor.berrymotes.CacheTrimService"></service>
 
         <activity
             android:name="com.trellmor.berrymotes.SettingsActivity"
@@ -89,6 +92,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <receiver android:name="com.trellmor.berrymotes.AlarmSetter" >
+    	    <intent-filter>
+        	    <action android:name="android.intent.action.BOOT_COMPLETED" />
+        	</intent-filter>
+    	</receiver>
     </application>
 
 </manifest>
