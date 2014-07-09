@@ -250,7 +250,13 @@ public class EmoteDownloader {
 					emotes.remove(i);
 					continue;
 				} else {
-					emotesHash.put(emote.getHash(), emote);
+					if (!emotesHash.containsKey(emote.getHash())) {
+						emotesHash.put(emote.getHash(), emote);
+					} else {
+						EmoteImage collision = emotesHash.get(emote.getHash());
+						Log.error("Hash collission! " + emote.getImage() + " (" + emote.getHash() + ") <-> " + 
+								collision.getImage() + " (" + collision.getHash() + ")");
+					}
 				}
 				i++;
 			}
