@@ -148,8 +148,10 @@ public class FileProvider extends ContentProvider {
 		
 		if (!emote.exists()) {
 			String emoteName = name;
+			String emoteExt = ".png"; //assume png by default
 			if (name.contains(".")) {
 				emoteName = name.substring(0, name.indexOf("."));
+				emoteExt = name.substring(name.indexOf(".")).toLowerCase();
 			}
 
 			Cursor cursor = context.getContentResolver().query(
@@ -167,7 +169,7 @@ public class FileProvider extends ContentProvider {
 				final int POS_DELAY = cursor
 						.getColumnIndex(EmotesContract.Emote.COLUMN_DELAY);
 
-				if (cursor.getCount() > 1) {
+				if (".gif".equals(emoteExt)) {
 					AnimatedGifEncoder age = new AnimatedGifEncoder();
 					age.setRepeat(0);
 					OutputStream os;
@@ -195,12 +197,14 @@ public class FileProvider extends ContentProvider {
 					} catch (IOException e) {
 						Log.e(TAG, "Generate gif " + name, e);
 					}
-				} else {
+				} else if (".png".equals(emoteExt)) {
 					try {
 						copy(new File(cursor.getString(POS_IMAGE)), emote);
 					} catch (IOException e) {
 						Log.e(TAG, "Copy file " + name, e);
 					}
+				} else {
+					throw new UnsupportedOperationException("Unsupported file type: " + emoteExt);
 				}
 			}
 
