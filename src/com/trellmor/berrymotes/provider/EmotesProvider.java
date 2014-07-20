@@ -42,11 +42,12 @@ public class EmotesProvider extends ContentProvider {
 	private static final UriMatcher sUriMatcher = new UriMatcher(
 			UriMatcher.NO_MATCH);
 	static {
-		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY, EmotesContract.PATH_EMOTES, ROUTE_EMOTES);
-		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY, EmotesContract.PATH_EMOTES + "/*",
-				ROUTE_EMOTES_ID);
-		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY, EmotesContract.PATH_EMOTES_DISTINCT,
-				ROUTE_EMOTES_DISTINCT);
+		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY,
+				EmotesContract.PATH_EMOTES, ROUTE_EMOTES);
+		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY,
+				EmotesContract.PATH_EMOTES + "/*", ROUTE_EMOTES_ID);
+		sUriMatcher.addURI(EmotesContract.CONTENT_AUTHORITY,
+				EmotesContract.PATH_EMOTES_DISTINCT, ROUTE_EMOTES_DISTINCT);
 	}
 
 	@Override
@@ -182,7 +183,7 @@ public class EmotesProvider extends ContentProvider {
 	static class EmotesDatabase extends SQLiteOpenHelper {
 		private final Context mContext;
 
-		public static final int DATABASE_VERSION = 3;
+		public static final int DATABASE_VERSION = 4;
 
 		private static final String DATABASE_NAME = "emotes.db";
 		private static final String IDX_ENTRIES_NAME = "idx_"
@@ -201,7 +202,8 @@ public class EmotesProvider extends ContentProvider {
 				+ EmotesContract.Emote.COLUMN_IMAGE + " TEXT,"
 				+ EmotesContract.Emote.COLUMN_HASH + " TEXT,"
 				+ EmotesContract.Emote.COLUMN_INDEX + " INTEGER,"
-				+ EmotesContract.Emote.COLUMN_DELAY + " INTEGER)";
+				+ EmotesContract.Emote.COLUMN_DELAY + " INTEGER,"
+				+ EmotesContract.Emote.COLUMN_SUBREDDIT + " TEXT)";
 		private static final String SQL_CREATE_IDX_ENTRIES_NAME = "CREATE INDEX "
 				+ IDX_ENTRIES_NAME
 				+ " ON "
