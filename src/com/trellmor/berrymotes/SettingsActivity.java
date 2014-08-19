@@ -19,10 +19,12 @@
 package com.trellmor.berrymotes;
 
 import java.io.File;
+import java.util.Map;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Build;
 import android.os.Bundle;
@@ -263,9 +265,14 @@ public class SettingsActivity extends PreferenceActivity {
 		}
 
 		private void clearLastModified(Context context) {
-			Editor editor = PreferenceManager.getDefaultSharedPreferences(
-					context).edit();
-			editor.remove(KEY_SYNC_LAST_MODIFIED);
+			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(
+					context);
+			Map<String,?> allSettings = settings.getAll();
+			Editor editor = settings.edit();
+			for (String key :  allSettings.keySet()) {
+				if (key.startsWith(KEY_SYNC_LAST_MODIFIED))
+					editor.remove(key);
+			}
 			editor.commit();
 		}
 	};

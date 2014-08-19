@@ -65,10 +65,10 @@ import com.trellmor.berrymotes.util.StorageNotAvailableException;
 
 public class EmoteDownloader {
 	public static final String HOST = "http://berrymotes.pew.cc/";
-	
+
 	private static final String SUBREDDITS = "subreddits.json.gz";
 	private static final String USER_AGENT = "BerryMotes Android sync";
-	
+
 	private static final int THREAD_COUNT = 4;
 
 	private Context mContext;
@@ -140,6 +140,12 @@ public class EmoteDownloader {
 				} else {
 					// Delete this subreddit
 					deleteSubreddit(subreddit, mContentResolver);
+					// Reset last download date
+					SharedPreferences.Editor settings = PreferenceManager
+							.getDefaultSharedPreferences(mContext).edit();
+					settings.remove(SettingsActivity.KEY_SYNC_LAST_MODIFIED
+							+ subreddit);
+					settings.commit();
 				}
 			}
 			executor.shutdown();
@@ -182,7 +188,7 @@ public class EmoteDownloader {
 
 			// Unregisters BroadcastReceiver at the end
 			mContext.unregisterReceiver(receiver);
-			
+
 			mHttpClient.close();
 		}
 
