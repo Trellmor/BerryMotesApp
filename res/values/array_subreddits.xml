@@ -42,6 +42,7 @@
 		<item>applefritter</item>
 		<item>applejack</item>
 		<item>arborus</item>
+		<item>asmatteringofemotes</item>
 		<item>babsquisition</item>
 		<item>batquisition</item>
 		<item>beautybrass</item>
@@ -56,6 +57,8 @@
 		<item>BTLoungeLoungeLounge</item>
 		<item>BTdoesntevenknow</item>
 		<item>btmodminmotes</item>
+		<item>BTMoonlit</item>
+		<item>BTpatron</item>
 		<item>cadance</item>
 		<item>chakolateemotes</item>
 		<item>cheesesandwichmlp</item>
@@ -75,6 +78,7 @@
 		<item>EquestriaGirls</item>
 		<item>falloutequestria</item>
 		<item>findauseforthesemotes</item>
+		<item>flait111</item>
 		<item>flitter</item>
 		<item>Flutquisition</item>
 		<item>flutterlounge</item>
@@ -92,6 +96,7 @@
 		<item>lyraquisition</item>
 		<item>malsententia</item>
 		<item>maudpie</item>
+		<item>meatemotes</item>
 		<item>minuette</item>
 		<item>mlas1animotes</item>
 		<item>mlas1emotes</item>
@@ -126,6 +131,7 @@
 		<item>mylittledramaticstory</item>
 		<item>mylittledraders</item>
 		<item>mylittledurian</item>
+		<item>mylittledusty</item>
 		<item>mylittlefalloutdiary</item>
 		<item>mylittlefistfight</item>
 		<item>mylittlefoodmanes</item>
@@ -151,8 +157,10 @@
 		<item>mylittleonions</item>
 		<item>mylittlepeanutgallery</item>
 		<item>mylittlepugnippets</item>
+		<item>mylittlescreamotes</item>
 		<item>mylittleserver</item>
 		<item>mylittlesh</item>
+		<item>mylittlesketchheart</item>
 		<item>MyLittleSlamJam</item>
 		<item>mylittlesports</item>
 		<item>mylittlesquidward</item>
@@ -189,6 +197,7 @@
 		<item>shadeschatlounge</item>
 		<item>shittyemotes</item>
 		<item>spaceclop</item>
+		<item>spanishmeerkat</item>
 		<item>speedingturtle</item>
 		<item>spitquisition</item>
 		<item>stalliongrad</item>
@@ -206,12 +215,16 @@
 		<item>thepleasurehub</item>
 		<item>trixquisition</item>
 		<item>themirishponies</item>
+		<item>tiltemotes</item>
 		<item>twidashmotes</item>
 		<item>twilightsparkle</item>
 		<item>twiquisition</item>
 		<item>vinylscratch</item>
 		<item>yaxim3</item>
 		<item>zponymotes</item>
+		<item>adagiodazzle</item>
+		<item>ariablaze</item>
+		<item>sonatadusk</item>
 	</string-array>
 	
 	<string-array name="pref_sync_subreddits_values">
@@ -238,6 +251,7 @@
 		<item>applefritter</item>
 		<item>applejack</item>
 		<item>arborus</item>
+		<item>asmatteringofemotes</item>
 		<item>babsquisition</item>
 		<item>batquisition</item>
 		<item>beautybrass</item>
@@ -252,6 +266,8 @@
 		<item>BTLoungeLoungeLounge</item>
 		<item>BTdoesntevenknow</item>
 		<item>btmodminmotes</item>
+		<item>BTMoonlit</item>
+		<item>BTpatron</item>
 		<item>cadance</item>
 		<item>chakolateemotes</item>
 		<item>cheesesandwichmlp</item>
@@ -271,6 +287,7 @@
 		<item>EquestriaGirls</item>
 		<item>falloutequestria</item>
 		<item>findauseforthesemotes</item>
+		<item>flait111</item>
 		<item>flitter</item>
 		<item>Flutquisition</item>
 		<item>flutterlounge</item>
@@ -288,6 +305,7 @@
 		<item>lyraquisition</item>
 		<item>malsententia</item>
 		<item>maudpie</item>
+		<item>meatemotes</item>
 		<item>minuette</item>
 		<item>mlas1animotes</item>
 		<item>mlas1emotes</item>
@@ -322,6 +340,7 @@
 		<item>mylittledramaticstory</item>
 		<item>mylittledraders</item>
 		<item>mylittledurian</item>
+		<item>mylittledusty</item>
 		<item>mylittlefalloutdiary</item>
 		<item>mylittlefistfight</item>
 		<item>mylittlefoodmanes</item>
@@ -347,8 +366,10 @@
 		<item>mylittleonions</item>
 		<item>mylittlepeanutgallery</item>
 		<item>mylittlepugnippets</item>
+		<item>mylittlescreamotes</item>
 		<item>mylittleserver</item>
 		<item>mylittlesh</item>
+		<item>mylittlesketchheart</item>
 		<item>MyLittleSlamJam</item>
 		<item>mylittlesports</item>
 		<item>mylittlesquidward</item>
@@ -385,6 +406,7 @@
 		<item>shadeschatlounge</item>
 		<item>shittyemotes</item>
 		<item>spaceclop</item>
+		<item>spanishmeerkat</item>
 		<item>speedingturtle</item>
 		<item>spitquisition</item>
 		<item>stalliongrad</item>
@@ -402,12 +424,16 @@
 		<item>thepleasurehub</item>
 		<item>trixquisition</item>
 		<item>themirishponies</item>
+		<item>tiltemotes</item>
 		<item>twidashmotes</item>
 		<item>twilightsparkle</item>
 		<item>twiquisition</item>
 		<item>vinylscratch</item>
 		<item>yaxim3</item>
 		<item>zponymotes</item>
+		<item>adagiodazzle</item>
+		<item>ariablaze</item>
+		<item>sonatadusk</item>
 	</string-array>
 	
 </resources>
