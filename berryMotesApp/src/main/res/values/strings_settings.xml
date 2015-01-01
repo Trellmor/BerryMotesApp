@@ -24,6 +24,7 @@
     <string name="pref_header_general">General</string>
     <string name="pref_title_show_nsfw">Display NSFW emotes</string>
     <string name="pref_description_show_nsfw">Show explicit emotes</string>
+    <string name="pref_title_background">Set background to white</string>
 
     <!-- Settings for Data & Sync -->
     <string name="pref_header_data_sync">Data &amp; sync</string>

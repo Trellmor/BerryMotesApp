@@ -1,17 +1,17 @@
 /*
- * BerryMotes android 
+ * BerryMotes android
  * Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -53,6 +53,7 @@ import com.trellmor.berrymotes.sync.SyncUtils;
  */
 public class SettingsActivity extends PreferenceActivity {
 	public final static String KEY_SHOW_NSFW = "show_nsfw";
+	public final static String KEY_BACKGROUND = "background";
 	public final static String KEY_SYNC_CONNECTION = "sync_connection";
 	public final static String KEY_SYNC_NSFW = "sync_nsfw";
 	public final static String KEY_SYNC_FREQUENCY = "sync_frequency";
@@ -116,7 +117,7 @@ public class SettingsActivity extends PreferenceActivity {
 		getPreferenceScreen().addPreference(fakeHeader);
 		addPreferencesFromResource(R.xml.pref_data_sync);
 
-		// Add 'data and sync' preferences, and a corresponding header.
+		// Add 'logging' preferences, and a corresponding header.
 		fakeHeader = new PreferenceCategory(this);
 		fakeHeader.setTitle(R.string.pref_header_logging);
 		getPreferenceScreen().addPreference(fakeHeader);
@@ -124,39 +125,33 @@ public class SettingsActivity extends PreferenceActivity {
 
 		bindPreferenceSummaryToValue(findPreference(KEY_SYNC_FREQUENCY));
 		bindPreferenceSummaryToValue(findPreference(KEY_SYNC_CONNECTION));
-		findPreference(KEY_SYNC_NSFW).setOnPreferenceChangeListener(
-				sResyncListener);
-		findPreference(KEY_SYNC_SUBREDDITS).setOnPreferenceChangeListener(
-				sResyncListener);
+		findPreference(KEY_SYNC_NSFW).setOnPreferenceChangeListener(sResyncListener);
+		findPreference(KEY_SYNC_SUBREDDITS).setOnPreferenceChangeListener(sResyncListener);
 
 		mPrefLogSend = findPreference(KEY_LOG_SEND);
-		mPrefLogSend
-				.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+		mPrefLogSend.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 
-					@Override
-					public boolean onPreferenceClick(Preference preference) {
-						sendLogFile();
-						return true;
-					}
-				});
+			@Override
+			public boolean onPreferenceClick(Preference preference) {
+				sendLogFile();
+				return true;
+			}
+		});
 
 		mPrefLogDelete = findPreference(KEY_LOG_DELETE);
-		mPrefLogDelete
-				.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+		mPrefLogDelete.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 
-					@Override
-					public boolean onPreferenceClick(Preference preference) {
-						File log = new File(
-								SettingsActivity.this.getFilesDir(),
-								EmoteDownloader.LOG_FILE_NAME);
-						if (log.exists()) {
-							log.delete();
-						}
+			@Override
+			public boolean onPreferenceClick(Preference preference) {
+				File log = new File(SettingsActivity.this.getFilesDir(), EmoteDownloader.LOG_FILE_NAME);
+				if (log.exists()) {
+					log.delete();
+				}
 
-						checkLogFile();
-						return true;
-					}
-				});
+				checkLogFile();
+				return true;
+			}
+		});
 
 		checkLogFile();
 	}
@@ -176,12 +171,10 @@ public class SettingsActivity extends PreferenceActivity {
 		// app ignores the EXTRA_STREAM if the Intent uses ACTION_SENDTO
 		intent.setType("message/rfc822");
 		intent.putExtra(Intent.EXTRA_SUBJECT, "BerryMotesApp sync log");
-		intent.putExtra(Intent.EXTRA_EMAIL,
-				new String[] { "berrymotes-synclog@trellmor.com" });
-		intent.putExtra(Intent.EXTRA_STREAM, FileContract.CONTENT_URI_FILE
-				.buildUpon().appendPath(EmoteDownloader.LOG_FILE_NAME).build());
-		startActivity(Intent.createChooser(intent,
-				getText(R.string.send_log_chooser)));
+		intent.putExtra(Intent.EXTRA_EMAIL, new String[] { "berrymotes-synclog@trellmor.com" });
+		intent.putExtra(Intent.EXTRA_STREAM,
+				FileContract.CONTENT_URI_FILE.buildUpon().appendPath(EmoteDownloader.LOG_FILE_NAME).build());
+		startActivity(Intent.createChooser(intent, getText(R.string.send_log_chooser)));
 	}
 
 	/**
@@ -195,13 +188,10 @@ public class SettingsActivity extends PreferenceActivity {
 
 			if (preference instanceof ListPreference) {
 				if (preference.getKey().equals(KEY_SYNC_CONNECTION)) {
-					if (stringValue
-							.equals(SettingsActivity.VALUE_SYNC_CONNECTION_ALL)) {
-						preference
-								.setSummary(R.string.pref_description_sync_connection_all);
+					if (stringValue.equals(SettingsActivity.VALUE_SYNC_CONNECTION_ALL)) {
+						preference.setSummary(R.string.pref_description_sync_connection_all);
 					} else {
-						preference
-								.setSummary(R.string.pref_description_sync_connection_wifi);
+						preference.setSummary(R.string.pref_description_sync_connection_wifi);
 
 						// Stop current sync
 						SyncUtils.cancelSync();
@@ -213,8 +203,7 @@ public class SettingsActivity extends PreferenceActivity {
 					int index = listPreference.findIndexOfValue(stringValue);
 
 					// Set the summary to reflect the new value.
-					preference.setSummary(index >= 0 ? listPreference
-							.getEntries()[index] : null);
+					preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
 				}
 			} else {
 				// For all other preferences, set the summary to the value's
@@ -236,21 +225,17 @@ public class SettingsActivity extends PreferenceActivity {
 	 * preference title) is updated to reflect the value. The summary is also
 	 * immediately updated upon calling this method. The exact display format is
 	 * dependent on the type of preference.
-	 * 
+	 *
 	 * @see #sBindPreferenceSummaryToValueListener
 	 */
 	private static void bindPreferenceSummaryToValue(Preference preference) {
 		// Set the listener to watch for value changes.
-		preference
-				.setOnPreferenceChangeListener(sBindPreferenceSummaryToValueListener);
+		preference.setOnPreferenceChangeListener(sBindPreferenceSummaryToValueListener);
 
 		// Trigger the listener immediately with the preference's
 		// current value.
-		sBindPreferenceSummaryToValueListener.onPreferenceChange(
-				preference,
-				PreferenceManager.getDefaultSharedPreferences(
-						preference.getContext()).getString(preference.getKey(),
-						""));
+		sBindPreferenceSummaryToValueListener.onPreferenceChange(preference, PreferenceManager
+				.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), ""));
 	}
 
 	/**
@@ -265,11 +250,10 @@ public class SettingsActivity extends PreferenceActivity {
 		}
 
 		private void clearLastModified(Context context) {
-			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(
-					context);
-			Map<String,?> allSettings = settings.getAll();
+			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
+			Map<String, ?> allSettings = settings.getAll();
 			Editor editor = settings.edit();
-			for (String key :  allSettings.keySet()) {
+			for (String key : allSettings.keySet()) {
 				if (key.startsWith(KEY_SYNC_LAST_MODIFIED))
 					editor.remove(key);
 			}
