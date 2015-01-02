@@ -1,6 +1,6 @@
 /*
  * BerryMotes android
- * Copyright (C) 2014 Daniel Triendl <trellmor@trellmor.com>
+ * Copyright (C) 2014-2015 Daniel Triendl <trellmor@trellmor.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,15 +44,15 @@ import android.provider.OpenableColumns;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
-import com.trellmor.berrymotes.SettingsActivity;
+import com.trellmor.berrymotes.Settings;
 import com.trellmor.berrymotes.sync.EmoteDownloader;
 import com.trellmor.berrymotes.util.AnimatedGifEncoder;
 
 public class FileProvider extends ContentProvider {
 	private static final String TAG = FileProvider.class.getName();
 
-	public static final int ROUTE_FILE = 1;
-	public static final int ROUTE_EMOTE = 2;
+	private static final int ROUTE_FILE = 1;
+	private static final int ROUTE_EMOTE = 2;
 
 	private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 	static {
@@ -182,7 +182,7 @@ public class FileProvider extends ContentProvider {
 				} else if (".png".equals(emoteExt)) {
 					try {
 						if (PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(
-								SettingsActivity.KEY_BACKGROUND, true)) {
+								Settings.KEY_BACKGROUND, true)) {
 							Bitmap b = addWhiteBackground(cursor.getString(POS_IMAGE));
 
 							File tmpDst = File.createTempFile(emote.getName(), null, emote.getParentFile());

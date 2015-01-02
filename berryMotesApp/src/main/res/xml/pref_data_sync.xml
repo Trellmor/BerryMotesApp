@@ -20,10 +20,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:threefiftyprefs="http://schemas.android.com/apk/res/com.trellmor.berrymotes">
 
-    <!--
-         NOTE: Hide buttons to simplify the UI. Users can touch outside the dialog to
-         dismiss it.
-    -->
+	<PreferenceCategory
+		android:title="@string/pref_header_data_sync" />
     
     <ListPreference 
         android:defaultValue="wifi"

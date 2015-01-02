@@ -1,6 +1,6 @@
 /*
  * BerryMotes android 
- * Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
+ * Copyright (C) 2013-2015 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,12 +28,11 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
-import com.trellmor.berrymotes.provider.EmotesContract;
-import com.trellmor.berrymotes.SettingsActivity;
+import com.trellmor.berrymotes.Settings;
 import com.trellmor.berrymotes.util.SelectionBuilder;
 
 public class EmotesProvider extends ContentProvider {
-	EmotesDatabase mDatabaseHelper;
+	private EmotesDatabase mDatabaseHelper;
 
 	private static final int ROUTE_EMOTES = 1;
 	private static final int ROUTE_EMOTES_ID = 2;
@@ -92,7 +91,7 @@ public class EmotesProvider extends ContentProvider {
 					selectionArgs);
 
 			if (!PreferenceManager.getDefaultSharedPreferences(getContext())
-					.getBoolean(SettingsActivity.KEY_SHOW_NSFW, false)) {
+					.getBoolean(Settings.KEY_SHOW_NSFW, false)) {
 				builder.where(EmotesContract.Emote.COLUMN_NSFW + "=?", "0");
 			}
 			c = builder.query(db, projection, sortOrder);
@@ -233,7 +232,7 @@ public class EmotesProvider extends ContentProvider {
 			db.execSQL(SQL_CREATE_IDX_ENTRIES_NAME);
 			db.execSQL(SQL_CREATE_IDX_ENTRIES_HASH);
 			PreferenceManager.getDefaultSharedPreferences(mContext).edit()
-					.remove(SettingsActivity.KEY_SYNC_LAST_MODIFIED).commit();
+					.remove(Settings.KEY_SYNC_LAST_MODIFIED).commit();
 		}
 
 		@Override

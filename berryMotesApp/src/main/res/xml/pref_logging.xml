@@ -20,6 +20,9 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
+	<PreferenceCategory
+		android:title="@string/pref_header_logging" />
+
     <CheckBoxPreference 
     	android:defaultValue="false"
         android:key="log"

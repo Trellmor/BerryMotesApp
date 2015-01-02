@@ -18,12 +18,13 @@
 
 package com.trellmor.berrymotes;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -33,7 +34,7 @@ import android.widget.TextView;
 import com.trellmor.berrymotes.sync.SyncService;
 import com.trellmor.berrymotes.sync.SyncUtils;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ActionBarActivity {
 	private static final String PREF_FIRST_RUN = "first_run";
 
 	private TextView mTextStatus;
@@ -52,6 +53,9 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+		setSupportActionBar(toolbar);
 
 		mTextStatus = (TextView) findViewById(R.id.text_status);
 
@@ -90,7 +94,7 @@ public class MainActivity extends Activity {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		Intent intent = null;
+		Intent intent;
 		switch (item.getItemId()) {
 		case R.id.menu_info:
 			showInfo();
@@ -121,8 +125,8 @@ public class MainActivity extends Activity {
 	}
 
 	private void showInfo() {
-		LayoutInflater infalter = LayoutInflater.from(this);
-		View view = infalter.inflate(R.layout.dialog_info, null);
+		LayoutInflater inflater = LayoutInflater.from(this);
+		View view = inflater.inflate(R.layout.dialog_info, null);
 
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
 		alertDialog.setTitle(R.string.title_dialog_info);

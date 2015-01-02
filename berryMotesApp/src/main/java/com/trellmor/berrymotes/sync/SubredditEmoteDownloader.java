@@ -1,6 +1,6 @@
 /*
  * BerryMotes android 
- * Copyright (C) 2014 Daniel Triendl <trellmor@trellmor.com>
+ * Copyright (C) 2015 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,22 +56,22 @@ import android.preference.PreferenceManager;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import com.trellmor.berrymotes.SettingsActivity;
+import com.trellmor.berrymotes.Settings;
 import com.trellmor.berrymotes.provider.EmotesContract;
 import com.trellmor.berrymotes.util.DownloadException;
 
-public class SubredditEmoteDownloader implements Runnable {
-	private Logger Log = LoggerFactory.getLogger(EmoteDownloader.class);
+class SubredditEmoteDownloader implements Runnable {
+	private final Logger Log = LoggerFactory.getLogger(EmoteDownloader.class);
 
 	private final Context mContext;
 	private final EmoteDownloader mEmoteDownloader;
 	private final ContentResolver mContentResolver;
 	private final String mSubreddit;
 	private Date mLastModified;
-	private File mBaseDir;
-	private SyncResult mSyncResult;
+	private final File mBaseDir;
+	private final SyncResult mSyncResult;
 
-	private boolean mDownloadNSFW;
+	private final boolean mDownloadNSFW;
 
 	private static final String EMOTES = "/emotes.json.gz";
 
@@ -83,10 +83,10 @@ public class SubredditEmoteDownloader implements Runnable {
 
 		SharedPreferences settings = PreferenceManager
 				.getDefaultSharedPreferences(context);
-		mDownloadNSFW = settings.getBoolean(SettingsActivity.KEY_SYNC_NSFW,
+		mDownloadNSFW = settings.getBoolean(Settings.KEY_SYNC_NSFW,
 				false);
 		mLastModified = new Date(settings.getLong(
-				SettingsActivity.KEY_SYNC_LAST_MODIFIED + mSubreddit, 0));
+				Settings.KEY_SYNC_LAST_MODIFIED + mSubreddit, 0));
 
 		mBaseDir = mContext.getExternalFilesDir(null);
 
@@ -109,29 +109,19 @@ public class SubredditEmoteDownloader implements Runnable {
 				if (!mSyncResult.hasError()) {
 					Log.info("Updating LAST_MODIFIED time to "
 							+ mLastModified.toString());
-					PreferenceManager
-							.getDefaultSharedPreferences(mContext)
-							.edit()
-							.putLong(
-									SettingsActivity.KEY_SYNC_LAST_MODIFIED
-											+ mSubreddit,
-									mLastModified.getTime()).commit();
+					PreferenceManager.getDefaultSharedPreferences(mContext).edit().putLong(
+							Settings.KEY_SYNC_LAST_MODIFIED	+ mSubreddit, mLastModified.getTime()).commit();
 				}
 			}
 		} catch (URISyntaxException e) {
 			Log.error("Emotes URL is malformed", e);
 			mSyncResult.stats.numParseExceptions++;
 			mSyncResult.delayUntil = 60 * 60;
-			return;
 		} catch (IOException e) {
 			Log.error("Error reading from network: " + e.getMessage(), e);
 			mSyncResult.stats.numIoExceptions++;
 			mSyncResult.delayUntil = 30 * 60;
-			return;
-		} catch (RemoteException e) {
-			Log.error("Error updating database: " + e.getMessage(), e);
-			mSyncResult.databaseError = true;
-		} catch (OperationApplicationException e) {
+		} catch (RemoteException | OperationApplicationException e) {
 			Log.error("Error updating database: " + e.getMessage(), e);
 			mSyncResult.databaseError = true;
 		} catch (InterruptedException e) {
@@ -152,7 +142,7 @@ public class SubredditEmoteDownloader implements Runnable {
 		if (emotes != null) {
 			checkInterrupted();
 
-			HashMap<String, EmoteImage> emotesHash = new HashMap<String, EmoteImage>();
+			HashMap<String, EmoteImage> emotesHash = new HashMap<>();
 			int i = 0;
 			while (i < emotes.size()) {
 				EmoteImage emote = emotes.get(i);
@@ -184,7 +174,7 @@ public class SubredditEmoteDownloader implements Runnable {
 					EmotesContract.Emote.COLUMN_SUBREDDIT + "=?",
 					new String[] { mSubreddit }, null);
 			if (c != null) {
-				ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+				ArrayList<ContentProviderOperation> batch = new ArrayList<>();
 				try {
 					if (c.moveToFirst()) {
 						final int POS_HASH = c
@@ -284,7 +274,7 @@ public class SubredditEmoteDownloader implements Runnable {
 
 						jsonReader.beginArray();
 						Gson gson = new Gson();
-						ArrayList<EmoteImage> emotes = new ArrayList<EmoteImage>();
+						ArrayList<EmoteImage> emotes = new ArrayList<>();
 						while (jsonReader.hasNext()) {
 							EmoteImage emote = gson.fromJson(jsonReader,
 									EmoteImage.class);
@@ -329,7 +319,7 @@ public class SubredditEmoteDownloader implements Runnable {
 		Log.debug("Updating emote database");
 
 		// Build map of entries
-		HashMap<String, EmoteImage> emoteHash = new HashMap<String, EmoteImage>();
+		HashMap<String, EmoteImage> emoteHash = new HashMap<>();
 		for (EmoteImage emote : emotes) {
 			emoteHash.put(emote.getHash(), emote);
 		}
@@ -343,7 +333,7 @@ public class SubredditEmoteDownloader implements Runnable {
 				EmotesContract.Emote.COLUMN_SUBREDDIT + "=?",
 				new String[] { mSubreddit }, null);
 		if (c != null) {
-			ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+			ArrayList<ContentProviderOperation> batch = new ArrayList<>();
 
 			if (c.moveToFirst()) {
 				final int POS_ID = c.getColumnIndex(EmotesContract.Emote._ID);
@@ -392,7 +382,7 @@ public class SubredditEmoteDownloader implements Runnable {
 
 		// Generate batch insert
 		checkInterrupted();
-		ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+		ArrayList<ContentProviderOperation> batch = new ArrayList<>();
 		String baseDir = mBaseDir.getAbsolutePath() + File.separator;
 		for (EmoteImage emote : emotes) {
 			for (String name : emote.getNames()) {
@@ -507,8 +497,7 @@ public class SubredditEmoteDownloader implements Runnable {
 	}
 
 	private void applyBatch(ArrayList<ContentProviderOperation> operations)
-			throws RemoteException, OperationApplicationException,
-			InterruptedException {
+			throws RemoteException, OperationApplicationException {
 		mContentResolver.applyBatch(EmotesContract.CONTENT_AUTHORITY,
 				operations);
 		mContentResolver.notifyChange(//

@@ -30,7 +30,7 @@ import android.os.IBinder;
 
 public class GenericAccountService extends Service {
 	private static final String ACCOUNT_TYPE = "com.trellmor.berrymotes.sync";
-	public static final String ACCOUNT_NAME = "BerryMotes";
+	private static final String ACCOUNT_NAME = "BerryMotes";
 	private Authenticator mAuthenticator;
 
 	public static Account getAccount() {

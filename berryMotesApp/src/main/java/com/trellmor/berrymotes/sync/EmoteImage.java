@@ -20,7 +20,7 @@ package com.trellmor.berrymotes.sync;
 
 import java.util.List;
 
-public class EmoteImage {
+class EmoteImage {
 	private boolean apng = false;
 	private boolean nsfw = false;
 	private int delay = 0;

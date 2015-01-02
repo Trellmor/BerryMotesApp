@@ -29,7 +29,7 @@ public class ListPreferenceMultiSelect extends ListPreference {
 	private boolean[] mClickedDialogEntryIndices;
 	private String mCheckAllKey;
 	private int mCheckAllIndex;
-	private String mSeperator;
+	private String mSeparator;
 	private CheckListPreference mPreference;
 	private CharSequence[] mEntries;
 	private CharSequence[] mEntryValues;
@@ -48,10 +48,10 @@ public class ListPreferenceMultiSelect extends ListPreference {
 		if (mCheckAllKey == null) {
 			mCheckAllKey = CheckListPreference.DEFAULT_ALL_KEY;
 		}
-		mSeperator = a
+		mSeparator = a
 				.getString(R.styleable.ListPreferenceMultiSelect_separator);
-		if (mSeperator == null) {
-			mSeperator = CheckListPreference.DEFAULT_SEPERATOR;
+		if (mSeparator == null) {
+			mSeparator = CheckListPreference.DEFAULT_SEPERATOR;
 		}
 		a.recycle();
 
@@ -106,9 +106,7 @@ public class ListPreferenceMultiSelect extends ListPreference {
 	private void updateCheckAll(DialogInterface dialog) {
 		boolean allChecked = true;
 		for (int i = 0; i < mClickedDialogEntryIndices.length; i++) {
-			if (i == mCheckAllIndex) {
-				continue;
-			} else {
+			if (i != mCheckAllIndex) {
 				if (!mClickedDialogEntryIndices[i]) {
 					allChecked = false;
 					break;
@@ -122,7 +120,7 @@ public class ListPreferenceMultiSelect extends ListPreference {
 	}
 
 	private void restoreCheckedEntries() {
-		mPreference = new CheckListPreference(getValue(), mSeperator,
+		mPreference = new CheckListPreference(getValue(), mSeparator,
 				mCheckAllKey);
 
 		for (int i = 0; i < mEntryValues.length; i++) {

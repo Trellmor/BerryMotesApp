@@ -45,8 +45,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 	 * and later platform versions
 	 */	
 	@SuppressLint("NewApi")
-	public SyncAdapter(Context context, boolean autoInitialize, boolean allowParalellSyncs) {
-		super(context, autoInitialize, allowParalellSyncs);
+	public SyncAdapter(Context context, boolean autoInitialize, boolean allowParallelSyncs) {
+		super(context, autoInitialize, allowParallelSyncs);
 	}
 	
 	@Override
@@ -62,6 +62,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 		EmoteDownloader downloader = new EmoteDownloader(getContext());
 		downloader.start(syncResult);
 			
-		Log.i(TAG, "Sync finished");		
+		Log.i(TAG, "Sync finished");
 	}
 }

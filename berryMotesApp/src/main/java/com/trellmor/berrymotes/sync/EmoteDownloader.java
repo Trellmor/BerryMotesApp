@@ -1,6 +1,6 @@
 /*
  * BerryMotes android 
- * Copyright (C) 2014 Daniel Triendl <trellmor@trellmor.com>
+ * Copyright (C) 2014-2015 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
 
 import com.google.gson.Gson;
-import com.trellmor.berrymotes.SettingsActivity;
+import com.trellmor.berrymotes.Settings;
 import com.trellmor.berrymotes.provider.EmotesContract;
 import com.trellmor.berrymotes.util.CheckListPreference;
 import com.trellmor.berrymotes.util.NetworkNotAvailableException;
@@ -71,11 +71,11 @@ public class EmoteDownloader {
 
 	private static final int THREAD_COUNT = 4;
 
-	private Context mContext;
+	private final Context mContext;
 	private final ContentResolver mContentResolver;
-	private CheckListPreference mSubreddits;
+	private final CheckListPreference mSubreddits;
 
-	private boolean mWiFiOnly;
+	private final boolean mWiFiOnly;
 	private int mNetworkType;
 	private boolean mIsConnected;
 
@@ -83,7 +83,7 @@ public class EmoteDownloader {
 
 	private SyncResult mSyncResult = null;
 
-	private Logger Log;
+	private final Logger Log;
 	public static final String LOG_FILE_NAME = "EmoteDownloader.log";
 
 	public EmoteDownloader(Context context) {
@@ -95,14 +95,14 @@ public class EmoteDownloader {
 
 		SharedPreferences settings = PreferenceManager
 				.getDefaultSharedPreferences(context);
-		mWiFiOnly = settings.getString(SettingsActivity.KEY_SYNC_CONNECTION,
-				SettingsActivity.VALUE_SYNC_CONNECTION_WIFI).equals(
-				SettingsActivity.VALUE_SYNC_CONNECTION_WIFI);
+		mWiFiOnly = settings.getString(Settings.KEY_SYNC_CONNECTION,
+				Settings.VALUE_SYNC_CONNECTION_WIFI).equals(
+				Settings.VALUE_SYNC_CONNECTION_WIFI);
 		mSubreddits = new CheckListPreference(settings.getString(
-				SettingsActivity.KEY_SYNC_SUBREDDITS,
-				SettingsActivity.DEFAULT_SYNC_SUBREDDITS),
-				SettingsActivity.SEPERATOR_SYNC_SUBREDDITS,
-				SettingsActivity.ALL_KEY_SYNC_SUBREDDITS);
+				Settings.KEY_SYNC_SUBREDDITS,
+				Settings.DEFAULT_SYNC_SUBREDDITS),
+				Settings.SEPARATOR_SYNC_SUBREDDITS,
+				Settings.ALL_KEY_SYNC_SUBREDDITS);
 
 		mContentResolver = mContext.getContentResolver();
 	}
@@ -143,7 +143,7 @@ public class EmoteDownloader {
 					// Reset last download date
 					SharedPreferences.Editor settings = PreferenceManager
 							.getDefaultSharedPreferences(mContext).edit();
-					settings.remove(SettingsActivity.KEY_SYNC_LAST_MODIFIED
+					settings.remove(Settings.KEY_SYNC_LAST_MODIFIED
 							+ subreddit);
 					settings.commit();
 				}
@@ -250,8 +250,7 @@ public class EmoteDownloader {
 					isr = new InputStreamReader(zis, "UTF-8");
 
 					Gson gson = new Gson();
-					String[] subreddits = gson.fromJson(isr, String[].class);
-					return subreddits;
+					return gson.fromJson(isr, String[].class);
 				} finally {
 					StreamUtils.closeStream(isr);
 					StreamUtils.closeStream(zis);
@@ -284,11 +283,7 @@ public class EmoteDownloader {
 
 	private boolean canDownload() {
 		synchronized (this) {
-			if (!mIsConnected) {
-				return false;
-			}
-
-			return !(mWiFiOnly && mNetworkType != ConnectivityManager.TYPE_WIFI);
+			return mIsConnected && !(mWiFiOnly && mNetworkType != ConnectivityManager.TYPE_WIFI);
 		}
 	}
 
@@ -322,13 +317,13 @@ public class EmoteDownloader {
 		// If logging is enabled in settings, also log to file
 		SharedPreferences settings = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
-		if (settings.getBoolean(SettingsActivity.KEY_LOG, false)) {
+		if (settings.getBoolean(Settings.KEY_LOG, false)) {
 			PatternLayoutEncoder encoder = new PatternLayoutEncoder();
 			encoder.setContext(lc);
 			encoder.setPattern("%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n");
 			encoder.start();
 
-			FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
+			FileAppender<ILoggingEvent> fileAppender = new FileAppender<>();
 			fileAppender.setContext(lc);
 			fileAppender
 					.setFile(new File(mContext.getFilesDir(), LOG_FILE_NAME)

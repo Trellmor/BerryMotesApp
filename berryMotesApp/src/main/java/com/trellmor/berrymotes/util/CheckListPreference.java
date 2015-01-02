@@ -23,28 +23,28 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CheckListPreference {
-	public static String DEFAULT_ALL_KEY = "#ALL#";
-	public static String DEFAULT_SEPERATOR = ";";
+	public static final String DEFAULT_ALL_KEY = "#ALL#";
+	public static final String DEFAULT_SEPERATOR = ";";
 
-	private String mAllKey;
-	private String mSeperator = ";";
-	private List<String> mValues;
+	private final String mAllKey;
+	private String mSeparator = ";";
+	private final List<String> mValues;
 
 	public CheckListPreference(String value) {
 		this(value, DEFAULT_SEPERATOR, DEFAULT_ALL_KEY);
 	}
 
-	public CheckListPreference(String value, String seperator) {
-		this(value, seperator, DEFAULT_ALL_KEY);
+	public CheckListPreference(String value, String separator) {
+		this(value, separator, DEFAULT_ALL_KEY);
 	}
 
-	public CheckListPreference(String value, String seperator, String allKey) {
+	public CheckListPreference(String value, String separator, String allKey) {
 		mAllKey = allKey;
-		mSeperator = seperator;
+		mSeparator = separator;
 
-		mValues = new ArrayList<String>();
+		mValues = new ArrayList<>();
 		if (!"".equals(value)) {
-			mValues.addAll(Arrays.asList(value.split(seperator)));			
+			mValues.addAll(Arrays.asList(value.split(separator)));
 		}
 	}
 	
@@ -70,7 +70,7 @@ public class CheckListPreference {
 		
 		for (String value : mValues) {
 			if (!"".equals(value)) {
-				sb.append(value).append(mSeperator);
+				sb.append(value).append(mSeparator);
 			}
 		}
 		return sb.toString();
