@@ -42,7 +42,6 @@
 		<item>applefritter</item>
 		<item>applejack</item>
 		<item>arborus</item>
-		<item>asmatteringofemotes</item>
 		<item>babsquisition</item>
 		<item>batquisition</item>
 		<item>beautybrass</item>
@@ -66,7 +65,6 @@
 		<item>clopclop</item>
 		<item>clopmotes</item>
 		<item>cloudchasermotes</item>
-		<item>comeinside</item>
 		<item>commabombing</item>
 		<item>cuttershy</item>
 		<item>dashiemotes</item>
@@ -92,6 +90,7 @@
 		<item>isthisanemoteyet</item>
 		<item>jacksanimotes</item>
 		<item>littlecolt</item>
+		<item>littlemissbloomotes</item>
 		<item>lyra</item>
 		<item>lyraquisition</item>
 		<item>malsententia</item>
@@ -99,10 +98,6 @@
 		<item>meatemotes</item>
 		<item>minuette</item>
 		<item>mlas1animotes</item>
-		<item>mlas1emotes</item>
-		<item>mlas1emotes2</item>
-		<item>mlas1imagedump</item>
-		<item>mlas1party</item>
 		<item>mlhfis</item>
 		<item>mlpdrawingschool</item>
 		<item>mlplounge</item>
@@ -112,7 +107,6 @@
 		<item>mortdoesreddit</item>
 		<item>multihoofdrinking</item>
 		<item>mylittleadventuretime</item>
-		<item>mylittlealicorn</item>
 		<item>mylittlealcoholic</item>
 		<item>mylittleandysonic1</item>
 		<item>mylittleanhero23</item>
@@ -168,6 +162,7 @@
 		<item>mylittlesupportgroup</item>
 		<item>mylittletacos</item>
 		<item>mylittletwist</item>
+		<item>mylittlevagrancy</item>
 		<item>mylittlewarhammer</item>
 		<item>mylittlewelcomewagon</item>
 		<item>mylittlewtf</item>
@@ -181,7 +176,6 @@
 		<item>ploungefootballleague</item>
 		<item>ploungemafia</item>
 		<item>ponyanarchism</item>
-		<item>ponyloungerts</item>
 		<item>ponymotes</item>
 		<item>ponymotesextra</item>
 		<item>pwettypwinkpwincesses</item>
@@ -190,6 +184,7 @@
 		<item>redtoxinemotes</item>
 		<item>roseluck</item>
 		<item>rubypinch</item>
+		<item>ryumotes</item>
 		<item>sapphirestone</item>
 		<item>scratchquisition</item>
 		<item>seriouslyluna</item>
@@ -212,7 +207,6 @@
 		<item>thanksberrytube</item>
 		<item>thebestpony</item>
 		<item>thecane</item>
-		<item>thepleasurehub</item>
 		<item>trixquisition</item>
 		<item>themirishponies</item>
 		<item>tiltemotes</item>
@@ -220,7 +214,6 @@
 		<item>twilightsparkle</item>
 		<item>twiquisition</item>
 		<item>vinylscratch</item>
-		<item>yaxim3</item>
 		<item>zponymotes</item>
 		<item>adagiodazzle</item>
 		<item>ariablaze</item>
@@ -251,7 +244,6 @@
 		<item>applefritter</item>
 		<item>applejack</item>
 		<item>arborus</item>
-		<item>asmatteringofemotes</item>
 		<item>babsquisition</item>
 		<item>batquisition</item>
 		<item>beautybrass</item>
@@ -275,7 +267,6 @@
 		<item>clopclop</item>
 		<item>clopmotes</item>
 		<item>cloudchasermotes</item>
-		<item>comeinside</item>
 		<item>commabombing</item>
 		<item>cuttershy</item>
 		<item>dashiemotes</item>
@@ -301,6 +292,7 @@
 		<item>isthisanemoteyet</item>
 		<item>jacksanimotes</item>
 		<item>littlecolt</item>
+		<item>littlemissbloomotes</item>
 		<item>lyra</item>
 		<item>lyraquisition</item>
 		<item>malsententia</item>
@@ -308,10 +300,6 @@
 		<item>meatemotes</item>
 		<item>minuette</item>
 		<item>mlas1animotes</item>
-		<item>mlas1emotes</item>
-		<item>mlas1emotes2</item>
-		<item>mlas1imagedump</item>
-		<item>mlas1party</item>
 		<item>mlhfis</item>
 		<item>mlpdrawingschool</item>
 		<item>mlplounge</item>
@@ -321,7 +309,6 @@
 		<item>mortdoesreddit</item>
 		<item>multihoofdrinking</item>
 		<item>mylittleadventuretime</item>
-		<item>mylittlealicorn</item>
 		<item>mylittlealcoholic</item>
 		<item>mylittleandysonic1</item>
 		<item>mylittleanhero23</item>
@@ -377,6 +364,7 @@
 		<item>mylittlesupportgroup</item>
 		<item>mylittletacos</item>
 		<item>mylittletwist</item>
+		<item>mylittlevagrancy</item>
 		<item>mylittlewarhammer</item>
 		<item>mylittlewelcomewagon</item>
 		<item>mylittlewtf</item>
@@ -390,7 +378,6 @@
 		<item>ploungefootballleague</item>
 		<item>ploungemafia</item>
 		<item>ponyanarchism</item>
-		<item>ponyloungerts</item>
 		<item>ponymotes</item>
 		<item>ponymotesextra</item>
 		<item>pwettypwinkpwincesses</item>
@@ -399,6 +386,7 @@
 		<item>redtoxinemotes</item>
 		<item>roseluck</item>
 		<item>rubypinch</item>
+		<item>ryumotes</item>
 		<item>sapphirestone</item>
 		<item>scratchquisition</item>
 		<item>seriouslyluna</item>
@@ -421,7 +409,6 @@
 		<item>thanksberrytube</item>
 		<item>thebestpony</item>
 		<item>thecane</item>
-		<item>thepleasurehub</item>
 		<item>trixquisition</item>
 		<item>themirishponies</item>
 		<item>tiltemotes</item>
@@ -429,7 +416,6 @@
 		<item>twilightsparkle</item>
 		<item>twiquisition</item>
 		<item>vinylscratch</item>
-		<item>yaxim3</item>
 		<item>zponymotes</item>
 		<item>adagiodazzle</item>
 		<item>ariablaze</item>
