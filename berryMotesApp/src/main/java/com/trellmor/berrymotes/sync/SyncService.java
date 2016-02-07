@@ -1,6 +1,6 @@
 /*
- * BerryMotes android 
- * Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
+ * BerryMotes
+ * Copyright (C) 2013-2016 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

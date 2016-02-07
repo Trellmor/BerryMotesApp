@@ -1,6 +1,6 @@
 /*
- * BerryMotes android 
- * Copyright (C) 2013-2015 Daniel Triendl <trellmor@trellmor.com>
+ * BerryMotes
+ * Copyright (C) 2013-2016 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
-import com.trellmor.berrymotes.Settings;
+import com.trellmor.berrymotes.util.Settings;
 import com.trellmor.berrymotes.util.SelectionBuilder;
 
 public class EmotesProvider extends ContentProvider {
@@ -90,10 +91,6 @@ public class EmotesProvider extends ContentProvider {
 			builder.table(EmotesContract.Emote.TABLE_NAME).where(selection,
 					selectionArgs);
 
-			if (!PreferenceManager.getDefaultSharedPreferences(getContext())
-					.getBoolean(Settings.KEY_SHOW_NSFW, false)) {
-				builder.where(EmotesContract.Emote.COLUMN_NSFW + "=?", "0");
-			}
 			c = builder.query(db, projection, sortOrder);
 
 			// Note: Notification URI must be manually set here for loaders to
@@ -182,7 +179,7 @@ public class EmotesProvider extends ContentProvider {
 	static class EmotesDatabase extends SQLiteOpenHelper {
 		private final Context mContext;
 
-		public static final int DATABASE_VERSION = 4;
+		public static final int DATABASE_VERSION = 5;
 
 		private static final String DATABASE_NAME = "emotes.db";
 		private static final String IDX_ENTRIES_NAME = "idx_"
@@ -196,7 +193,6 @@ public class EmotesProvider extends ContentProvider {
 				+ EmotesContract.Emote.TABLE_NAME + " ("
 				+ EmotesContract.Emote._ID + " INTEGER PRIMARY KEY,"
 				+ EmotesContract.Emote.COLUMN_NAME + " TEXT,"
-				+ EmotesContract.Emote.COLUMN_NSFW + " INTEGER,"
 				+ EmotesContract.Emote.COLUMN_APNG + " INTEGER,"
 				+ EmotesContract.Emote.COLUMN_IMAGE + " TEXT,"
 				+ EmotesContract.Emote.COLUMN_HASH + " TEXT,"
@@ -237,10 +233,44 @@ public class EmotesProvider extends ContentProvider {
 
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			db.execSQL(SQL_DROP_IDX_ENTRIES_HASH);
-			db.execSQL(SQL_DROP_IDX_ENTRIES_NAME);
-			db.execSQL(SQL_DROP_ENTRIES);
-			onCreate(db);
+			switch (oldVersion) {
+				case 0:
+				case 1:
+				case 2:
+				case 3:
+					db.execSQL(SQL_DROP_IDX_ENTRIES_HASH);
+					db.execSQL(SQL_DROP_IDX_ENTRIES_NAME);
+					db.execSQL(SQL_DROP_ENTRIES);
+					onCreate(db);
+					break;
+				case 4:
+					db.beginTransaction();
+					try {
+						db.execSQL(SQL_DROP_IDX_ENTRIES_HASH);
+						db.execSQL(SQL_DROP_IDX_ENTRIES_NAME);
+						db.execSQL("ALTER TABLE " + EmotesContract.Emote.TABLE_NAME + " RENAME TO "
+								+ EmotesContract.Emote.TABLE_NAME + "_upgrading");
+
+						onCreate(db);
+
+						db.execSQL("INSERT INTO " + EmotesContract.Emote.TABLE_NAME + " SELECT "
+								+ EmotesContract.Emote._ID + ", "
+								+ EmotesContract.Emote.COLUMN_NAME + ", "
+								+ EmotesContract.Emote.COLUMN_APNG + ", "
+								+ EmotesContract.Emote.COLUMN_IMAGE + ", "
+								+ EmotesContract.Emote.COLUMN_HASH + ", "
+								+ EmotesContract.Emote.COLUMN_INDEX + ", "
+								+ EmotesContract.Emote.COLUMN_DELAY + ", "
+								+ EmotesContract.Emote.COLUMN_SUBREDDIT + " FROM "
+								+ EmotesContract.Emote.TABLE_NAME + "_upgrading");
+
+						db.execSQL("DROP TABLE " + EmotesContract.Emote.TABLE_NAME + "_upgrading");
+						db.setTransactionSuccessful();
+					} finally {
+						db.endTransaction();
+					}
+					break;
+			}
 		}
 	}
 }

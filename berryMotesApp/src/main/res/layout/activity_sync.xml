@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	BerryMotes
+	Copyright (C) 2013-2016 Daniel Triendl <trellmor@trellmor.com>
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	 
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	tools:context=".ui.SyncActivity">
+
+	<android.support.v7.widget.Toolbar
+		android:id="@+id/toolbar"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="?attr/colorPrimary"
+		android:minHeight="?attr/actionBarSize"
+		app:popupTheme="@style/Theme.BerryMotes"
+		app:theme="@style/Theme.BerryMotes.Toolbar"/>
+
+	<RelativeLayout
+		android:id="@+id/layout_info"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/toolbar"
+		android:padding="20dp">
+
+		<RelativeLayout
+			android:id="@+id/layout_buttons"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:paddingBottom="20dp">
+
+			<Button
+				android:id="@+id/button_sync"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_alignParentEnd="true"
+				android:layout_alignParentRight="true"
+				android:onClick="buttonSyncClick"
+				android:text="@string/button_sync"/>
+
+			<Button
+				android:id="@+id/button_cancel"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_alignParentLeft="true"
+				android:layout_alignParentStart="true"
+				android:onClick="buttonCancelClick"
+				android:text="@string/button_cancel"/>
+		</RelativeLayout>
+
+		<RelativeLayout
+			android:id="@+id/layout_text"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_below="@id/layout_buttons">
+
+			<TextView
+				android:id="@+id/text_status_title"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_alignParentLeft="true"
+				android:layout_alignParentStart="true"
+				android:paddingEnd="3dp"
+				android:paddingLeft="0dp"
+				android:paddingRight="3dp"
+				android:paddingStart="0dp"
+				android:text="@string/text_status"
+				android:textAppearance="?android:attr/textAppearanceMedium"/>
+
+			<TextView
+				android:id="@+id/text_status"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_toEndOf="@id/text_status_title"
+				android:layout_toRightOf="@id/text_status_title"
+				android:textAppearance="?android:attr/textAppearanceMedium"/>
+		</RelativeLayout>
+	</RelativeLayout>
+
+	<RelativeLayout
+		android:id="@+id/layout_logs"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_below="@+id/layout_info"
+		android:paddingLeft="20dp"
+		android:paddingRight="20dp">
+
+		<TextView
+			android:id="@+id/text_logs_title"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="@string/text_sync_log"
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textStyle="bold"
+			android:paddingBottom="10dp"/>
+
+		<ListView
+			android:id="@+id/list_logs"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_below="@id/text_logs_title"/>
+	</RelativeLayout>
+</RelativeLayout>

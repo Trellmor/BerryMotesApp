@@ -1,6 +1,7 @@
-<!-- 
-	BerryMotes android 
-	Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	BerryMotes
+	Copyright (C) 2013-2016 Daniel Triendl <trellmor@trellmor.com>
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -16,20 +17,14 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<PreferenceCategory 
-	    android:title="@string/pref_header_general" />
-	    
-    <CheckBoxPreference
-		android:defaultValue="false"
-		android:key="show_nsfw"
-		android:summary="@string/pref_description_show_nsfw"
-		android:title="@string/pref_title_show_nsfw" />
+	<PreferenceCategory
+		android:title="@string/pref_header_general"/>
 
 	<CheckBoxPreference
 		android:defaultValue="true"
 		android:key="background"
-		android:title="@string/pref_title_background" />
+		android:title="@string/pref_title_background"/>
 
 </PreferenceScreen>

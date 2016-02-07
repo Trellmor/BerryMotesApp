@@ -1,6 +1,6 @@
 /*
- * BerryMotes android 
- * Copyright (C) 2014 Daniel Triendl <trellmor@trellmor.com>
+ * BerryMotes
+ * Copyright (C) 2014-2016 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,20 +30,37 @@ import android.util.Log;
 public class StreamUtils {
 	private static final String TAG = StreamUtils.class.getName();
 
-	public static void  saveStreamToFile(InputStream is, File file) throws IOException {
+	public interface ProgressCallback {
+		void onProgress(long done);
+	}
+
+	public static void saveStreamToFile(InputStream is, File file) throws IOException {
 		OutputStream os = new FileOutputStream(file);
 		try {
-			byte[] buffer = new byte[1024];
-			int read;
-
-			while ((read = is.read(buffer)) != -1) {
-				os.write(buffer, 0, read);
-			}
-
-			os.flush();
+			copy(is, os);
 		} finally {
 			closeStream(os);
 		}
+	}
+
+	public static void copy(InputStream is, OutputStream os) throws IOException {
+		copy(is, os, null);
+	}
+
+	public static void copy(InputStream is, OutputStream os, ProgressCallback progress) throws IOException {
+		byte[] buffer = new byte[1024];
+		int read;
+		long done = 0;
+
+		while ((read = is.read(buffer)) != -1) {
+			os.write(buffer, 0, read);
+			if (progress != null) {
+				done += read;
+				progress.onProgress(done);
+			}
+		}
+
+		os.flush();
 	}
 
 	public static void closeStream(Closeable c) {

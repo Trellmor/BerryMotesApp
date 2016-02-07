@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!--
-	BerryMotes android
-	Copyright (C) 2015 Daniel Triendl <trellmor@trellmor.com>
+	BerryMotes
+	Copyright (C) 2015-2016 Daniel Triendl <trellmor@trellmor.com>
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -26,17 +25,17 @@
 
 	<android.support.v7.widget.Toolbar
 		android:id="@+id/toolbar"
-		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
-		android:minHeight="?attr/actionBarSize"
+		android:layout_height="wrap_content"
 		android:background="?attr/colorPrimary"
-		app:theme="@style/Theme.BerryMotes.Toolbar"
-		app:popupTheme="@style/Theme.BerryMotes" />
+		android:minHeight="?attr/actionBarSize"
+		app:popupTheme="@style/Theme.BerryMotes"
+		app:theme="@style/Theme.BerryMotes.Toolbar"/>
 
 	<FrameLayout
 		android:id="@+id/frame_general"
-		android:layout_below="@+id/toolbar"
 		android:layout_width="match_parent"
-		android:layout_height="wrap_content" />
+		android:layout_height="wrap_content"
+		android:layout_below="@+id/toolbar"/>
 
 </RelativeLayout>

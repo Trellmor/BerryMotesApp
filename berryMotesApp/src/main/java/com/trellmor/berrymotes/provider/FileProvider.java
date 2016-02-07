@@ -1,6 +1,6 @@
 /*
- * BerryMotes android
- * Copyright (C) 2014-2015 Daniel Triendl <trellmor@trellmor.com>
+ * BerryMotes
+ * Copyright (C) 2014-2016 Daniel Triendl <trellmor@trellmor.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,19 +44,17 @@ import android.provider.OpenableColumns;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
-import com.trellmor.berrymotes.Settings;
+import com.trellmor.berrymotes.util.Settings;
 import com.trellmor.berrymotes.sync.EmoteDownloader;
 import com.trellmor.berrymotes.util.AnimatedGifEncoder;
 
 public class FileProvider extends ContentProvider {
 	private static final String TAG = FileProvider.class.getName();
 
-	private static final int ROUTE_FILE = 1;
-	private static final int ROUTE_EMOTE = 2;
+	private static final int ROUTE_EMOTE = 1;
 
 	private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 	static {
-		sUriMatcher.addURI(FileContract.CONTENT_AUTHORITY, FileContract.PATH_FILE + "/*", ROUTE_FILE);
 		sUriMatcher.addURI(FileContract.CONTENT_AUTHORITY, FileContract.PATH_EMOTE + "/*", ROUTE_EMOTE);
 	}
 
@@ -68,14 +66,9 @@ public class FileProvider extends ContentProvider {
 	@Override
 	public String getType(Uri uri) {
 		switch (sUriMatcher.match(uri)) {
-		case ROUTE_FILE:
 		case ROUTE_EMOTE:
 			String ext = MimeTypeMap.getFileExtensionFromUrl(uri.toString());
-			if ("log".equals(ext)) {
-				return "text/plain";
-			} else {
-				return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
-			}
+			return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
 		default:
 			return null;
 		}
@@ -84,17 +77,6 @@ public class FileProvider extends ContentProvider {
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 		switch (sUriMatcher.match(uri)) {
-		case ROUTE_FILE:
-			File logFile = getLogFile(uri);
-			if (logFile.exists()) {
-				MatrixCursor cursor = new MatrixCursor(new String[] { OpenableColumns.DISPLAY_NAME,
-						OpenableColumns.SIZE });
-
-				cursor.addRow(new Object[] { logFile.getName(), logFile.length() });
-
-				return cursor;
-			}
-			break;
 		case ROUTE_EMOTE:
 			String ext = MimeTypeMap.getFileExtensionFromUrl(uri.toString());
 			if (!"".equals(ext)) {
@@ -114,25 +96,12 @@ public class FileProvider extends ContentProvider {
 
 	@Override
 	public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
-		ParcelFileDescriptor pfd;
 		switch (sUriMatcher.match(uri)) {
-		case ROUTE_FILE:
-			pfd = ParcelFileDescriptor.open(getLogFile(uri), ParcelFileDescriptor.MODE_READ_ONLY);
-			return pfd;
 		case ROUTE_EMOTE:
-			pfd = ParcelFileDescriptor.open(getEmote(uri.getLastPathSegment()), ParcelFileDescriptor.MODE_READ_WRITE);
-			return pfd;
+			return ParcelFileDescriptor.open(getEmote(uri.getLastPathSegment()), ParcelFileDescriptor.MODE_READ_WRITE);
 		default:
 			throw new UnsupportedOperationException("Unsupported uri: " + uri.toString());
 		}
-	}
-
-	private File getLogFile(Uri uri) {
-		String fileName = uri.getLastPathSegment();
-		if (!EmoteDownloader.LOG_FILE_NAME.equals(fileName)) {
-			throw new SecurityException("Invalid file: " + fileName);
-		}
-		return new File(getContext().getFilesDir(), fileName);
 	}
 
 	private File getEmote(String name) {

@@ -1,6 +1,6 @@
 /*
- * BerryMotes android 
- * Copyright (C) 2015 Daniel Triendl <trellmor@trellmor.com>
+ * BerryMotes
+ * Copyright (C) 2015-2016 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,43 +25,37 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URI;
+import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.impl.cookie.DateParseException;
-import org.apache.http.impl.cookie.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.OperationApplicationException;
-import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import com.trellmor.berrymotes.Settings;
 import com.trellmor.berrymotes.provider.EmotesContract;
+import com.trellmor.berrymotes.provider.SubredditProvider;
 import com.trellmor.berrymotes.util.DownloadException;
+import com.trellmor.berrymotes.api.Endpoints;
 
 class SubredditEmoteDownloader implements Runnable {
-	private final Logger Log = LoggerFactory.getLogger(EmoteDownloader.class);
+	private final Logger Log = LoggerFactory.getLogger(SubredditEmoteDownloader.class);
 
 	private final Context mContext;
 	private final EmoteDownloader mEmoteDownloader;
@@ -71,8 +65,6 @@ class SubredditEmoteDownloader implements Runnable {
 	private final File mBaseDir;
 	private final SyncResult mSyncResult;
 
-	private final boolean mDownloadNSFW;
-
 	private static final String EMOTES = "/emotes.json.gz";
 
 	public SubredditEmoteDownloader(Context context,
@@ -81,16 +73,21 @@ class SubredditEmoteDownloader implements Runnable {
 		mEmoteDownloader = emoteDownloader;
 		mSubreddit = subreddit;
 
-		SharedPreferences settings = PreferenceManager
-				.getDefaultSharedPreferences(context);
-		mDownloadNSFW = settings.getBoolean(Settings.KEY_SYNC_NSFW,
-				false);
-		mLastModified = new Date(settings.getLong(
-				Settings.KEY_SYNC_LAST_MODIFIED + mSubreddit, 0));
-
 		mBaseDir = mContext.getExternalFilesDir(null);
 
 		mContentResolver = mContext.getContentResolver();
+
+		Cursor c = mContentResolver.query(SubredditProvider.CONTENT_URI_SUBREDDITS,
+				new String[] {SubredditProvider.SubredditColumns.COLUMN_LAST_SYNC},
+				SubredditProvider.SubredditColumns.COLUMN_NAME + " =?",
+				new String[] {mSubreddit}, null);
+
+		if (c.getCount() > 0) {
+			c.moveToFirst();
+			mLastModified = new Date(c.getLong(c.getColumnIndex(SubredditProvider.SubredditColumns.COLUMN_LAST_SYNC)));
+		} else {
+			mLastModified = new Date(0);
+		}
 
 		mSyncResult = new SyncResult();
 	}
@@ -107,25 +104,27 @@ class SubredditEmoteDownloader implements Runnable {
 
 				// If everything is ok, update the last modified date
 				if (!mSyncResult.hasError()) {
-					Log.info("Updating LAST_MODIFIED time to "
-							+ mLastModified.toString());
-					PreferenceManager.getDefaultSharedPreferences(mContext).edit().putLong(
-							Settings.KEY_SYNC_LAST_MODIFIED	+ mSubreddit, mLastModified.getTime()).commit();
+					Log.debug("{}: Updating LAST_MODIFIED time to {}", mSubreddit, mLastModified);
+
+					ContentValues values = new ContentValues();
+					values.put(SubredditProvider.SubredditColumns.COLUMN_LAST_SYNC, mLastModified.getTime());
+					mContentResolver.update(SubredditProvider.CONTENT_URI_SUBREDDITS, values,
+							SubredditProvider.SubredditColumns.COLUMN_NAME + " =?", new String[]{mSubreddit});
 				}
 			}
 		} catch (URISyntaxException e) {
-			Log.error("Emotes URL is malformed", e);
+			Log.error(mSubreddit + ": Emotes URL is malformed", e);
 			mSyncResult.stats.numParseExceptions++;
 			mSyncResult.delayUntil = 60 * 60;
 		} catch (IOException e) {
-			Log.error("Error reading from network: " + e.getMessage(), e);
+			Log.error(mSubreddit + ": Error reading from network: " + e.getMessage(), e);
 			mSyncResult.stats.numIoExceptions++;
 			mSyncResult.delayUntil = 30 * 60;
 		} catch (RemoteException | OperationApplicationException e) {
-			Log.error("Error updating database: " + e.getMessage(), e);
+			Log.error(mSubreddit + ": Error updating database: " + e.getMessage(), e);
 			mSyncResult.databaseError = true;
 		} catch (InterruptedException e) {
-			Log.info("Sync interrupted");
+			Log.info(mSubreddit + ": Sync interrupted");
 			mSyncResult.moreRecordsToGet = true;
 			Thread.currentThread().interrupt();
 		} finally {
@@ -136,7 +135,7 @@ class SubredditEmoteDownloader implements Runnable {
 	private List<EmoteImage> getEmoteList() throws IOException,
 			RemoteException, OperationApplicationException, URISyntaxException,
 			InterruptedException {
-		Log.debug("Getting emote list");
+		Log.debug("{}: Getting emote list", mSubreddit);
 		List<EmoteImage> emotes = downloadEmoteList();
 
 		if (emotes != null) {
@@ -146,25 +145,17 @@ class SubredditEmoteDownloader implements Runnable {
 			int i = 0;
 			while (i < emotes.size()) {
 				EmoteImage emote = emotes.get(i);
-				if (!mDownloadNSFW && emote.isNsfw()) {
-					Log.debug("Skipped emote " + emote.getImage() + " (NSFW)");
-					emotes.remove(i);
-					continue;
+				if (!emotesHash.containsKey(emote.getHash())) {
+					emotesHash.put(emote.getHash(), emote);
 				} else {
-					if (!emotesHash.containsKey(emote.getHash())) {
-						emotesHash.put(emote.getHash(), emote);
-					} else {
-						EmoteImage collision = emotesHash.get(emote.getHash());
-						Log.error("Hash collission! " + emote.getImage() + " ("
-								+ emote.getHash() + ") <-> "
-								+ collision.getImage() + " ("
-								+ collision.getHash() + ")");
-					}
+					EmoteImage collision = emotesHash.get(emote.getHash());
+					Log.error("{}: Hash collision! " + emote.getImage() + " ("
+							+ emote.getHash() + ") <-> "
+							+ collision.getImage() + " ("
+							+ collision.getHash() + ")", mSubreddit);
 				}
 				i++;
 			}
-			Log.info("Removed ignored emotes, "
-					+ Integer.toString(emotesHash.size()) + " left.");
 
 			checkInterrupted();
 			Cursor c = mContentResolver.query(
@@ -177,15 +168,12 @@ class SubredditEmoteDownloader implements Runnable {
 				ArrayList<ContentProviderOperation> batch = new ArrayList<>();
 				try {
 					if (c.moveToFirst()) {
-						final int POS_HASH = c
-								.getColumnIndex(EmotesContract.Emote.COLUMN_HASH);
-						final int POS_IMAGE = c
-								.getColumnIndex(EmotesContract.Emote.COLUMN_IMAGE);
+						final int POS_HASH = c.getColumnIndex(EmotesContract.Emote.COLUMN_HASH);
+						final int POS_IMAGE = c.getColumnIndex(EmotesContract.Emote.COLUMN_IMAGE);
 						do {
 							String hash = c.getString(POS_HASH);
 							if (!emotesHash.containsKey(hash)) {
-								Log.debug("Removing " + c.getString(POS_IMAGE)
-										+ " (" + hash + ") (not in emote list)");
+								Log.debug("{}: Removing {} ({}) (not in emote list)", mSubreddit, c.getString(POS_IMAGE), hash);
 								batch.add(ContentProviderOperation
 										.newDelete(
 												EmotesContract.Emote.CONTENT_URI)
@@ -206,11 +194,12 @@ class SubredditEmoteDownloader implements Runnable {
 					c.close();
 
 				} finally {
-					Log.debug("Removing emotes from DB");
+					Log.debug("{}: Removing emotes from DB", mSubreddit);
 					applyBatch(batch);
 					mSyncResult.stats.numDeletes += batch.size();
-					Log.info("Removed " + Integer.toString(batch.size())
-							+ " emotes from DB");
+					if (batch.size() > 0) {
+						Log.info("{}: Removed {} emotes from DB", mSubreddit, batch.size());
+					}
 				}
 			}
 		}
@@ -220,94 +209,82 @@ class SubredditEmoteDownloader implements Runnable {
 	private List<EmoteImage> downloadEmoteList() throws URISyntaxException,
 			IOException, InterruptedException {
 		checkInterrupted();
-		Log.debug("Downloading " + mSubreddit + EMOTES);
-		HttpRequestBase request = new HttpGet();
-		request.setURI(new URI(EmoteDownloader.HOST + mSubreddit + EMOTES));
-		request.setHeader("If-Modified-Since",
-				DateUtils.formatDate(mLastModified));
+		Log.debug("{}: Downloading {}", mSubreddit, EMOTES);
 
 		mEmoteDownloader.checkCanDownload();
-		HttpResponse response = mEmoteDownloader.getHttpClient().execute(
-				request);
-		switch (response.getStatusLine().getStatusCode()) {
-		case 200:
-			Log.debug(mSubreddit + EMOTES + " loaded");
-			// Download ok
-			Header[] lastModified = response.getHeaders("last-modified");
-			if (lastModified.length > 0) {
-				try {
-					mLastModified = DateUtils.parseDate(lastModified[0]
-							.getValue());
-				} catch (DateParseException e) {
-					Log.error("Error parsing last-modified header", e);
-				}
-			}
 
-			HttpEntity entity = response.getEntity();
-			if (entity != null) {
-				checkInterrupted();
+		HttpURLConnection con = (HttpURLConnection) new URL(Endpoints.SYNC + mSubreddit + EMOTES).openConnection();
+		try {
+			con.setIfModifiedSince(mLastModified.getTime());
+			con.connect();
+			switch (con.getResponseCode()) {
+				case HttpURLConnection.HTTP_OK:
+					Log.debug("{}: {} loaded", mSubreddit, EMOTES);
+					// Download ok
+					mLastModified = new Date(con.getLastModified());
 
-				File tmpFile = File.createTempFile(mSubreddit, null,
-						mContext.getCacheDir());
-				try {
-					InputStream is = entity.getContent();
-					try {
-						mEmoteDownloader.checkStorageAvailable();
-						StreamUtils.saveStreamToFile(is, tmpFile);
-					} finally {
-						StreamUtils.closeStream(is);
-					}
-
-					FileInputStream fis = null;
-					BufferedInputStream bis = null;
-					GZIPInputStream zis = null;
-					Reader isr = null;
-					JsonReader jsonReader = null;
 					checkInterrupted();
 
+					File tmpFile = File.createTempFile(mSubreddit, null,
+							mContext.getCacheDir());
 					try {
-						fis = new FileInputStream(tmpFile);
-						bis = new BufferedInputStream(fis);
-						zis = new GZIPInputStream(bis);
-						isr = new InputStreamReader(zis, "UTF-8");
-						jsonReader = new JsonReader(isr);
-
-						jsonReader.beginArray();
-						Gson gson = new Gson();
-						ArrayList<EmoteImage> emotes = new ArrayList<>();
-						while (jsonReader.hasNext()) {
-							EmoteImage emote = gson.fromJson(jsonReader,
-									EmoteImage.class);
-							emotes.add(emote);
+						InputStream is = con.getInputStream();
+						try {
+							mEmoteDownloader.checkStorageAvailable();
+							StreamUtils.saveStreamToFile(is, tmpFile);
+						} finally {
+							StreamUtils.closeStream(is);
 						}
-						jsonReader.endArray();
 
-						Log.info("Loaded " + mSubreddit + EMOTES + ", size: "
-								+ Integer.toString(emotes.size()));
-						return emotes;
+						FileInputStream fis = null;
+						BufferedInputStream bis = null;
+						GZIPInputStream zis = null;
+						Reader isr = null;
+						JsonReader jsonReader = null;
+						checkInterrupted();
+
+						try {
+							fis = new FileInputStream(tmpFile);
+							bis = new BufferedInputStream(fis);
+							zis = new GZIPInputStream(bis);
+							isr = new InputStreamReader(zis, "UTF-8");
+							jsonReader = new JsonReader(isr);
+
+							jsonReader.beginArray();
+							Gson gson = new Gson();
+							ArrayList<EmoteImage> emotes = new ArrayList<>();
+							while (jsonReader.hasNext()) {
+								EmoteImage emote = gson.fromJson(jsonReader,
+										EmoteImage.class);
+								emotes.add(emote);
+							}
+							jsonReader.endArray();
+
+							Log.info("{}: Loaded {} , size: {}", mSubreddit, EMOTES, emotes.size());
+							return emotes;
+						} finally {
+							StreamUtils.closeStream(jsonReader);
+							StreamUtils.closeStream(isr);
+							StreamUtils.closeStream(zis);
+							StreamUtils.closeStream(bis);
+							StreamUtils.closeStream(fis);
+						}
 					} finally {
-						StreamUtils.closeStream(jsonReader);
-						StreamUtils.closeStream(isr);
-						StreamUtils.closeStream(zis);
-						StreamUtils.closeStream(bis);
-						StreamUtils.closeStream(fis);
+						tmpFile.delete();
 					}
-				} finally {
-					tmpFile.delete();
-				}
+				case HttpURLConnection.HTTP_NOT_MODIFIED:
+					Log.debug("{}: {} already up to date (HTTP 304)", mSubreddit, EMOTES);
+					break;
+				case HttpURLConnection.HTTP_FORBIDDEN:
+				case HttpURLConnection.HTTP_NOT_FOUND:
+					Log.info("{}: {} missing on server, removing emotes", mSubreddit, EMOTES);
+					mEmoteDownloader.deleteSubreddit(mSubreddit, mContentResolver);
+					break;
+				default:
+					throw new IOException("Unexpected HTTP response: " + con.getResponseMessage());
 			}
-			break;
-		case 304:
-			Log.info(mSubreddit + EMOTES + " already up to date (HTTP 304)");
-			break;
-		case 403:
-		case 404:
-			Log.info(mSubreddit + " missing on server, removing emotes");
-			mEmoteDownloader.deleteSubreddit(mSubreddit, mContentResolver);
-			break;
-		default:
-			throw new IOException("Unexpected HTTP response: "
-					+ response.getStatusLine().getReasonPhrase());
+		} finally {
+			 con.disconnect();
 		}
 		return null;
 	}
@@ -316,7 +293,7 @@ class SubredditEmoteDownloader implements Runnable {
 			OperationApplicationException, InterruptedException {
 		checkInterrupted();
 
-		Log.debug("Updating emote database");
+		Log.debug("{}: Updating emote database", mSubreddit);
 
 		// Build map of entries
 		HashMap<String, EmoteImage> emoteHash = new HashMap<>();
@@ -337,10 +314,8 @@ class SubredditEmoteDownloader implements Runnable {
 
 			if (c.moveToFirst()) {
 				final int POS_ID = c.getColumnIndex(EmotesContract.Emote._ID);
-				final int POS_NAME = c
-						.getColumnIndex(EmotesContract.Emote.COLUMN_NAME);
-				final int POS_HASH = c
-						.getColumnIndex(EmotesContract.Emote.COLUMN_HASH);
+				final int POS_NAME = c.getColumnIndex(EmotesContract.Emote.COLUMN_NAME);
+				final int POS_HASH = c.getColumnIndex(EmotesContract.Emote.COLUMN_HASH);
 
 				do {
 					String hash = c.getString(POS_HASH);
@@ -355,8 +330,7 @@ class SubredditEmoteDownloader implements Runnable {
 								emotes.remove(emote);
 							}
 						} else {
-							Log.debug("Removing " + name + " (" + hash
-									+ ") from DB");
+							Log.debug("{}: Removing {} ({}) from DB", mSubreddit, name, hash);
 							Uri deleteUri = EmotesContract.Emote.CONTENT_URI
 									.buildUpon()
 									.appendPath(
@@ -372,12 +346,13 @@ class SubredditEmoteDownloader implements Runnable {
 			c.close();
 
 			// Delete all emotes that no longer exist
-			Log.debug("Removing emotes names from DB");
+			Log.debug("{}: Removing emote names from DB", mSubreddit);
 			checkInterrupted();
 			applyBatch(batch);
 			mSyncResult.stats.numDeletes += batch.size();
-			Log.info("Removed " + Integer.toString(batch.size())
-					+ " emotes names from DB");
+			if (batch.size() > 0) {
+				Log.info("{}: Removed {} emote names from DB", mSubreddit, batch.size());
+			}
 		}
 
 		// Generate batch insert
@@ -386,12 +361,10 @@ class SubredditEmoteDownloader implements Runnable {
 		String baseDir = mBaseDir.getAbsolutePath() + File.separator;
 		for (EmoteImage emote : emotes) {
 			for (String name : emote.getNames()) {
-				Log.debug("Adding " + name + " to DB");
+				Log.debug("{}: Adding {} to DB", mSubreddit, name);
 				batch.add(ContentProviderOperation
 						.newInsert(EmotesContract.Emote.CONTENT_URI)
 						.withValue(EmotesContract.Emote.COLUMN_NAME, name)
-						.withValue(EmotesContract.Emote.COLUMN_NSFW,
-								(emote.isNsfw() ? 1 : 0))
 						.withValue(EmotesContract.Emote.COLUMN_APNG,
 								(emote.isApng() ? 1 : 0))
 						.withValue(EmotesContract.Emote.COLUMN_IMAGE,
@@ -407,17 +380,18 @@ class SubredditEmoteDownloader implements Runnable {
 			}
 		}
 
-		Log.debug("Adding emotes names to DB");
+		Log.debug("{}: Adding emote names to DB", mSubreddit);
 		checkInterrupted();
 		applyBatch(batch);
 		mSyncResult.stats.numInserts += batch.size();
-		Log.info("Added " + Integer.toString(batch.size())
-				+ " emotes names to DB");
+		if (batch.size() > 0) {
+			Log.info("{}: Added {} emote names to DB", mSubreddit, batch.size());
+		}
 	}
 
 	private void downloadEmotes(List<EmoteImage> emotes)
 			throws URISyntaxException, IOException, InterruptedException {
-		Log.debug("Downloading emotes");
+		Log.debug("{}: Downloading emotes", mSubreddit);
 		// Create .nomedia file to stop android from indexing the emote images
 		mEmoteDownloader.checkStorageAvailable();
 		File nomedia = new File(mBaseDir, ".nomedia");
@@ -431,13 +405,12 @@ class SubredditEmoteDownloader implements Runnable {
 			EmoteImage emote = emotes.get(i);
 			try {
 				if (!downloadEmote(emote)) {
-					Log.warn("Failed to download " + emote.getImage());
+					Log.warn("{}: Failed to download {}", mSubreddit, emote.getImage());
 					emotes.remove(i);
 					continue;
 				}
 			} catch (DownloadException e) {
-				Log.error(e.getMessage(), e);
-				Log.info("Failed to download " + emote.getImage());
+				Log.error(mSubreddit + ": Failed to download " + emote.getImage() + ": " + e.getMessage(), e);
 
 				emotes.remove(i);
 				mSyncResult.stats.numIoExceptions++;
@@ -456,40 +429,35 @@ class SubredditEmoteDownloader implements Runnable {
 		File file = new File(mBaseDir, emote.getImage());
 
 		if (!file.exists()) {
-			Log.debug("Downloading emote " + emote.getImage());
+			Log.debug("{}: Downloading emote {}", mSubreddit, emote.getImage());
 
 			file.getParentFile().mkdirs();
 
 			mEmoteDownloader.checkCanDownload();
-			HttpGet request = new HttpGet();
-			request.setURI(new URI(EmoteDownloader.HOST + emote.getImage()));
-			HttpResponse response = mEmoteDownloader.getHttpClient().execute(
-					request);
-			if (response.getStatusLine().getStatusCode() != 200) {
-				throw new DownloadException("Download failed for \""
+			HttpURLConnection con = (HttpURLConnection) new URL(Endpoints.SYNC + emote.getImage()).openConnection();
+			try {
+				con.connect();
+				if (con.getResponseCode() != HttpURLConnection.HTTP_OK) {throw new DownloadException("Download failed for \""
 						+ emote.getImage()
 						+ "\" code: "
-						+ String.valueOf(response.getStatusLine()
-								.getStatusCode()));
-			}
+						+ String.valueOf(con.getResponseCode()));
+				}
 
-			HttpEntity entity = response.getEntity();
-			if (entity == null) {
-				throw new DownloadException("Download failed for \""
-						+ emote.getImage() + "\"");
-			}
+				InputStream is = con.getInputStream();
+				try {
+					File tmpFile = new File(file.getAbsolutePath() + ".tmp");
+					if (tmpFile.exists())
+						tmpFile.delete();
+					StreamUtils.saveStreamToFile(is, tmpFile);
+					tmpFile.renameTo(file);
+					Log.debug("{}: Downloaded emote {}", mSubreddit, emote.getImage());
+				} finally {
+					StreamUtils.closeStream(is);
+				}
 
-			mEmoteDownloader.checkStorageAvailable();
-			InputStream is = entity.getContent();
-			try {
-				File tmpFile = new File(file.getAbsolutePath() + ".tmp");
-				if (tmpFile.exists())
-					tmpFile.delete();
-				StreamUtils.saveStreamToFile(is, tmpFile);
-				tmpFile.renameTo(file);
-				Log.debug("Downloaded emote " + emote.getImage());
+				mEmoteDownloader.checkStorageAvailable();
 			} finally {
-				StreamUtils.closeStream(is);
+				con.disconnect();
 			}
 		}
 

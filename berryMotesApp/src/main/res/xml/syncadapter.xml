@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!-- 
-	BerryMotes android 
-	Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
+	BerryMotes
+	Copyright (C) 2013-2016 Daniel Triendl <trellmor@trellmor.com>
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -19,10 +18,10 @@
 -->
 
 <sync-adapter
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:contentAuthority="com.trellmor.berrymotes"
-        android:accountType="com.trellmor.berrymotes.sync"
-        android:userVisible="false"
-        android:supportsUploading="false"
-        android:allowParallelSyncs="false"
-        android:isAlwaysSyncable="true" />
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:accountType="com.trellmor.berrymotes.sync"
+	android:allowParallelSyncs="false"
+	android:contentAuthority="com.trellmor.berrymotes"
+	android:isAlwaysSyncable="true"
+	android:supportsUploading="false"
+	android:userVisible="false"/>

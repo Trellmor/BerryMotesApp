@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!-- 
-	BerryMotes android 
-	Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
+	BerryMotes
+	Copyright (C) 2013-2016 Daniel Triendl <trellmor@trellmor.com>
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -18,26 +17,26 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
 	<PreferenceCategory
-		android:title="@string/pref_header_logging" />
+		android:title="@string/pref_header_logging"/>
 
-    <CheckBoxPreference 
-    	android:defaultValue="false"
-        android:key="log"
-   	    android:summary="@string/pref_description_log"
-   	    android:title="@string/pref_title_log" />
-    	
-    <Preference 
-        android:key="log_send"
-        android:title="@string/pref_title_log_send"
-        android:summary="@string/pref_description_log_send" >
-    </Preference>
-    
-    <Preference 
-        android:key="log_delete"
-        android:title="@string/pref_title_log_delete" >
-    </Preference>
+	<CheckBoxPreference
+		android:defaultValue="false"
+		android:key="log"
+		android:summary="@string/pref_description_log"
+		android:title="@string/pref_title_log"/>
+
+	<Preference
+		android:key="log_send"
+		android:summary="@string/pref_description_log_send"
+		android:title="@string/pref_title_log_send">
+	</Preference>
+
+	<Preference
+		android:key="log_delete"
+		android:title="@string/pref_title_log_delete">
+	</Preference>
 
 </PreferenceScreen>

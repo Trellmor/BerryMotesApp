@@ -1,6 +1,6 @@
 /*
  * Copyright 2013 Google Inc.
- * Copyright 2013-2015 Daniel Triendl <daniel@pew.cc>
+ * Copyright 2013-2016 Daniel Triendl <daniel@pew.cc>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 
 import com.trellmor.berrymotes.provider.EmotesContract;
-import com.trellmor.berrymotes.Settings;
+import com.trellmor.berrymotes.util.Settings;
 
 /**
  * Static helper methods for working with the sync framework.

@@ -1,6 +1,6 @@
 /*
- * BerryMotes android 
- * Copyright (C) 2013 Daniel Triendl <trellmor@trellmor.com>
+ * BerryMotes
+ * Copyright (C) 2013-2016 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ import java.util.List;
 
 class EmoteImage {
 	private boolean apng = false;
-	private boolean nsfw = false;
 	private int delay = 0;
 	private int index = 0;
 	private String hash;
@@ -32,10 +31,6 @@ class EmoteImage {
 
 	public boolean isApng() {
 		return apng;
-	}
-
-	public boolean isNsfw() {
-		return nsfw;
 	}
 
 	public List<String> getNames() {

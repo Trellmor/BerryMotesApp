@@ -1,6 +1,6 @@
 /*
- * BerryMotes android 
- * Copyright (C) 2014-2015 Daniel Triendl <trellmor@trellmor.com>
+ * BerryMotes
+ * Copyright (C) 2014-2016 Daniel Triendl <trellmor@trellmor.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,25 +20,17 @@ package com.trellmor.berrymotes.sync;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPInputStream;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpRequestBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -47,39 +39,35 @@ import android.content.SyncResult;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.http.AndroidHttpClient;
+import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.android.BasicLogcatConfigurator;
+import ch.qos.logback.classic.android.ContentProviderAppender;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.filter.ThresholdFilter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
 
-import com.google.gson.Gson;
-import com.trellmor.berrymotes.Settings;
+import com.trellmor.berrymotes.util.Settings;
 import com.trellmor.berrymotes.provider.EmotesContract;
-import com.trellmor.berrymotes.util.CheckListPreference;
+import com.trellmor.berrymotes.provider.LogProvider;
+import com.trellmor.berrymotes.provider.SubredditProvider;
 import com.trellmor.berrymotes.util.NetworkNotAvailableException;
 import com.trellmor.berrymotes.util.StorageNotAvailableException;
 
 public class EmoteDownloader {
-	public static final String HOST = "http://berrymotes.pew.cc/";
-
-	private static final String SUBREDDITS = "subreddits.json.gz";
-	private static final String USER_AGENT = "BerryMotes Android sync";
 
 	private static final int THREAD_COUNT = 4;
 
 	private final Context mContext;
 	private final ContentResolver mContentResolver;
-	private final CheckListPreference mSubreddits;
+	private final Boolean mAllSubreddits;
 
 	private final boolean mWiFiOnly;
 	private int mNetworkType;
 	private boolean mIsConnected;
-
-	private AndroidHttpClient mHttpClient;
 
 	private SyncResult mSyncResult = null;
 
@@ -98,11 +86,7 @@ public class EmoteDownloader {
 		mWiFiOnly = settings.getString(Settings.KEY_SYNC_CONNECTION,
 				Settings.VALUE_SYNC_CONNECTION_WIFI).equals(
 				Settings.VALUE_SYNC_CONNECTION_WIFI);
-		mSubreddits = new CheckListPreference(settings.getString(
-				Settings.KEY_SYNC_SUBREDDITS,
-				Settings.DEFAULT_SYNC_SUBREDDITS),
-				Settings.SEPARATOR_SYNC_SUBREDDITS,
-				Settings.ALL_KEY_SYNC_SUBREDDITS);
+		mAllSubreddits = settings.getBoolean(Settings.KEY_SYNC_ALL_SUBREDDITS, true);
 
 		mContentResolver = mContext.getContentResolver();
 	}
@@ -128,37 +112,67 @@ public class EmoteDownloader {
 
 		ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
 
-		mHttpClient = AndroidHttpClient.newInstance(USER_AGENT);
 		try {
-			String[] subreddits = getSubreddits();
+			Thread thread = new Thread(new SubredditDownloader(mContext, true));
+			thread.start();
+			thread.join();
 
-			for (String subreddit : subreddits) {
-				if (mSubreddits.isChecked(subreddit)) {
-					Runnable subredditEmoteDownloader = new SubredditEmoteDownloader(
-							mContext, this, subreddit);
-					executor.execute(subredditEmoteDownloader);
-				} else {
+			Cursor c = mContentResolver.query(SubredditProvider.CONTENT_URI_SUBREDDITS, new String[] {
+					SubredditProvider.SubredditColumns._ID,
+					SubredditProvider.SubredditColumns.COLUMN_NAME,
+					SubredditProvider.SubredditColumns.COLUMN_ENABLED}, null, null, null);
+
+			if (c != null && c.getCount() > 0) {
+				c.moveToFirst();
+				ArrayList<String> enabledSubreddits = new ArrayList<>();
+				ArrayList<String> deleteSubreddits = new ArrayList<>();
+
+				final int POS_ID = c.getColumnIndex(SubredditProvider.SubredditColumns._ID);
+				final int POS_NAME = c.getColumnIndex(SubredditProvider.SubredditColumns.COLUMN_NAME);
+				final int POS_ENABLED = c.getColumnIndex(SubredditProvider.SubredditColumns.COLUMN_ENABLED);
+
+				do {
+					if (mAllSubreddits || c.getInt(POS_ENABLED) == 1) {
+						Runnable subredditEmoteDownloader = new SubredditEmoteDownloader(
+								mContext, this, c.getString(POS_NAME));
+						executor.execute(subredditEmoteDownloader);
+						enabledSubreddits.add(c.getString(POS_NAME));
+					} else {
+						deleteSubreddits.add(c.getString(POS_NAME));
+						// Reset last download date
+						Uri uri = SubredditProvider.CONTENT_URI_SUBREDDITS.buildUpon().appendPath(String.valueOf(c.getInt(POS_ID))).build();
+						ContentValues values = new ContentValues();
+						values.put(SubredditProvider.SubredditColumns.COLUMN_LAST_SYNC, 0);
+						mContentResolver.update(uri, values, null, null);
+					}
+				} while (c.moveToNext());
+
+				Cursor cursorCurrent = mContentResolver.query(EmotesContract.Emote.CONTENT_URI_DISTINCT,
+						new String[]{EmotesContract.Emote.COLUMN_SUBREDDIT}, null, null, null);
+
+				if (cursorCurrent != null && cursorCurrent.getCount() > 0) {
+					cursorCurrent.moveToFirst();
+
+					final int POS_SUBREDDIT = cursorCurrent.getColumnIndex(EmotesContract.Emote.COLUMN_SUBREDDIT);
+
+					do {
+						String subreddit = cursorCurrent.getString(POS_SUBREDDIT);
+						if (!enabledSubreddits.contains(subreddit)) {
+							if (!deleteSubreddits.contains(subreddit)) {
+								deleteSubreddits.add(subreddit);
+							}
+						}
+					} while (cursorCurrent.moveToNext());
+				}
+
+				for (String subreddit : deleteSubreddits) {
 					// Delete this subreddit
 					deleteSubreddit(subreddit, mContentResolver);
-					// Reset last download date
-					SharedPreferences.Editor settings = PreferenceManager
-							.getDefaultSharedPreferences(mContext).edit();
-					settings.remove(Settings.KEY_SYNC_LAST_MODIFIED
-							+ subreddit);
-					settings.commit();
 				}
 			}
 			executor.shutdown();
 			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-		} catch (URISyntaxException e) {
-			Log.error("Emotes URL is malformed", e);
-			synchronized (mSyncResult) {
-				mSyncResult.stats.numParseExceptions++;
-				if (mSyncResult.delayUntil < 60 * 60)
-					mSyncResult.delayUntil = 60 * 60;
-			}
-			return;
-		} catch (IOException e) {
+		}  catch (IOException e) {
 			Log.error("Error reading from network: " + e.getMessage(), e);
 			synchronized (mSyncResult) {
 				mSyncResult.stats.numIoExceptions++;
@@ -181,24 +195,19 @@ public class EmoteDownloader {
 
 			Thread.currentThread().interrupt();
 		} finally {
-			Log.info("Deleted emotes: "
-					+ Long.toString(mSyncResult.stats.numDeletes));
-			Log.info("Added emotes: "
-					+ Long.toString(mSyncResult.stats.numInserts));
+			Log.info("Deleted emotes: {}", mSyncResult.stats.numDeletes);
+			Log.info("Added emotes: {}", mSyncResult.stats.numInserts);
 
 			// Unregisters BroadcastReceiver at the end
 			mContext.unregisterReceiver(receiver);
-
-			mHttpClient.close();
 		}
 
 		Log.info("EmoteDownload finished");
 	}
 
-	public void deleteSubreddit(String subreddit,
-			ContentResolver contentResolver) throws IOException {
+	public void deleteSubreddit(String subreddit, ContentResolver contentResolver) throws IOException {
 
-		Log.info(" Removing emotes of " + subreddit);
+		Log.debug("Removing emotes of {}", subreddit);
 		Cursor c = contentResolver.query(
 				EmotesContract.Emote.CONTENT_URI_DISTINCT,
 				new String[] { EmotesContract.Emote.COLUMN_IMAGE },
@@ -206,8 +215,7 @@ public class EmoteDownloader {
 				new String[] { subreddit }, null);
 
 		if (c.moveToFirst()) {
-			final int POS_IMAGE = c
-					.getColumnIndex(EmotesContract.Emote.COLUMN_IMAGE);
+			final int POS_IMAGE = c.getColumnIndex(EmotesContract.Emote.COLUMN_IMAGE);
 
 			do {
 				checkStorageAvailable();
@@ -223,46 +231,12 @@ public class EmoteDownloader {
 		int deletes = mContentResolver.delete(EmotesContract.Emote.CONTENT_URI,
 				EmotesContract.Emote.COLUMN_SUBREDDIT + "=?",
 				new String[] { subreddit });
-		Log.info("Removed emotes: " + Integer.toString(deletes));
+		if (deletes > 0) {
+			Log.info("{} deleted, removed {} emotes", subreddit, deletes);
+		}
 		synchronized (mSyncResult) {
 			mSyncResult.stats.numDeletes += deletes;
 		}
-	}
-
-	private String[] getSubreddits() throws IOException, URISyntaxException {
-		Log.debug("Downloading emote list");
-		HttpRequestBase request = new HttpGet();
-		request.setURI(new URI(HOST + SUBREDDITS));
-
-		this.checkCanDownload();
-		HttpResponse response = mHttpClient.execute(request);
-		switch (response.getStatusLine().getStatusCode()) {
-		case 200:
-			Log.debug(SUBREDDITS + " loaded");
-
-			HttpEntity entity = response.getEntity();
-			if (entity != null) {
-				InputStream is = entity.getContent();
-				GZIPInputStream zis = null;
-				Reader isr = null;
-				try {
-					zis = new GZIPInputStream(is);
-					isr = new InputStreamReader(zis, "UTF-8");
-
-					Gson gson = new Gson();
-					return gson.fromJson(isr, String[].class);
-				} finally {
-					StreamUtils.closeStream(isr);
-					StreamUtils.closeStream(zis);
-					StreamUtils.closeStream(is);
-				}
-			}
-			break;
-		default:
-			throw new IOException("Unexpected HTTP response: "
-					+ response.getStatusLine().getReasonPhrase());
-		}
-		return null;
 	}
 
 	private void updateNetworkInfo() {
@@ -289,8 +263,7 @@ public class EmoteDownloader {
 
 	public void checkCanDownload() throws IOException {
 		if (!this.canDownload()) {
-			throw new NetworkNotAvailableException(
-					"Download currently not possible");
+			throw new NetworkNotAvailableException("Download currently not possible");
 		}
 	}
 
@@ -311,8 +284,25 @@ public class EmoteDownloader {
 		LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
 		lc.reset();
 
+
+		ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory
+				.getLogger(Logger.ROOT_LOGGER_NAME);
+
 		// Log to logcat
 		BasicLogcatConfigurator.configureDefaultContext();
+
+		ContentProviderAppender contentProviderAppender = new ContentProviderAppender(mContext.getApplicationContext());
+		contentProviderAppender.setContext(lc);
+		contentProviderAppender.setLogsUri(LogProvider.CONTENT_URI_LOGS);
+
+		ThresholdFilter filter = new ThresholdFilter();
+		filter.setContext(lc);
+		filter.setLevel("INFO");
+		filter.start();
+
+		contentProviderAppender.addFilter(filter);
+		contentProviderAppender.start();
+		root.addAppender(contentProviderAppender);
 
 		// If logging is enabled in settings, also log to file
 		SharedPreferences settings = PreferenceManager
@@ -330,15 +320,8 @@ public class EmoteDownloader {
 							.getAbsolutePath());
 			fileAppender.setEncoder(encoder);
 			fileAppender.start();
-
-			ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory
-					.getLogger(Logger.ROOT_LOGGER_NAME);
 			root.addAppender(fileAppender);
 		}
-	}
-
-	public AndroidHttpClient getHttpClient() {
-		return mHttpClient;
 	}
 
 	public void updateSyncResult(SyncResult syncResult) {
