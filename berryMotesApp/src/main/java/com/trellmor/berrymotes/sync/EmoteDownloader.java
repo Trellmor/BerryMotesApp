@@ -113,6 +113,8 @@ public class EmoteDownloader {
 		ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
 
 		try {
+			checkCanDownload();
+
 			Thread thread = new Thread(new SubredditDownloader(mContext, true));
 			thread.start();
 			thread.join();
@@ -179,7 +181,6 @@ public class EmoteDownloader {
 				if (mSyncResult.delayUntil < 30 * 60)
 					mSyncResult.delayUntil = 30 * 60;
 			}
-			return;
 		} catch (InterruptedException e) {
 			synchronized (mSyncResult) {
 				syncResult.moreRecordsToGet = true;
@@ -255,15 +256,23 @@ public class EmoteDownloader {
 		}
 	}
 
-	private boolean canDownload() {
+	private boolean isConnected() {
 		synchronized (this) {
-			return mIsConnected && !(mWiFiOnly && mNetworkType != ConnectivityManager.TYPE_WIFI);
+			return mIsConnected;
+		}
+	}
+
+	private boolean isAllowedNetworkType() {
+		synchronized (this) {
+			return !(mWiFiOnly && mNetworkType != ConnectivityManager.TYPE_WIFI);
 		}
 	}
 
 	public void checkCanDownload() throws IOException {
-		if (!this.canDownload()) {
-			throw new NetworkNotAvailableException("Download currently not possible");
+		if (!this.isConnected()) {
+			throw new NetworkNotAvailableException("No network connection");
+		} else if (!this.isAllowedNetworkType()) {
+			throw new NetworkNotAvailableException("Downloading on mobile is disabled");
 		}
 	}
 
