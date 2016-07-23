@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 24
+    buildToolsVersion "24.0.1"
 
     defaultConfig {
         applicationId "com.trellmor.berrymotes"
         minSdkVersion 14
-        targetSdkVersion 23
+        targetSdkVersion 24
     }
 
     buildTypes {
@@ -21,8 +21,8 @@ android {
 dependencies {
     compile project(':libBerryMotes')
     compile files('libs/logback-android-1.1.1-4.jar')
-    compile 'com.android.support:appcompat-v7:23.1.1'
-    compile 'com.google.code.gson:gson:2.3.1'
+    compile 'com.android.support:appcompat-v7:24.1.1'
+    compile 'com.google.code.gson:gson:2.4'
     compile 'org.slf4j:slf4j-api:1.7.14'
-    compile 'com.android.support:support-v4:23.1.1'
+    compile 'com.android.support:support-v4:24.1.1'
 }
