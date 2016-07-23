@@ -100,7 +100,9 @@ public class EmoteAdapter extends CursorAdapter implements ListAdapter {
 			String path = params[1];
 			Drawable d = mLoader.fromPath(path);
 			if (d != null) {
-				mCache.put(emote, d);
+				synchronized (mCache) {
+					mCache.put(emote, d);
+				}
 				return d;
 			} else {
 				return null;

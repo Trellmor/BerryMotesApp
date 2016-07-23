@@ -289,6 +289,7 @@ public class EmoteGridActivity extends AppCompatActivity implements EmoteGridFra
 			} else {
 				Uri uri = FileContract.getUriForEmote(name, apng);
 				final Intent intent = new Intent();
+				intent.setData(uri);
 				intent.putExtra(Intent.EXTRA_STREAM, uri);
 
 				FragmentManager fm = getFragmentManager();
